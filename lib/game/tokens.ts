@@ -1,0 +1,34 @@
+import type { EffectKind, EffectStyle, TokenInfo, TokenSymbol } from "@/types/game";
+
+export const TOKENS: Record<TokenSymbol, TokenInfo> = {
+  H: { label: "Hydrogen", valence: 1, category: "nonmetal", shell: "bg-sky-100 border-sky-300", text: "text-sky-950", glow: "shadow-sky-300/45" },
+  O: { label: "Oxygen", valence: 2, category: "nonmetal", shell: "bg-rose-100 border-rose-300", text: "text-rose-950", glow: "shadow-rose-300/45" },
+  C: { label: "Carbon", valence: 4, category: "organic", shell: "bg-zinc-800 border-zinc-500", text: "text-white", glow: "shadow-zinc-500/35" },
+  N: { label: "Nitrogen", valence: 3, category: "nonmetal", shell: "bg-indigo-100 border-indigo-300", text: "text-indigo-950", glow: "shadow-indigo-300/45" },
+  P: { label: "Phosphorus", valence: 3, category: "nonmetal", shell: "bg-lime-100 border-lime-300", text: "text-lime-950", glow: "shadow-lime-300/45" },
+  B: { label: "Boron", valence: 3, category: "nonmetal", shell: "bg-pink-100 border-pink-300", text: "text-pink-950", glow: "shadow-pink-300/45" },
+  F: { label: "Fluorine", valence: 1, category: "halogen", shell: "bg-emerald-100 border-emerald-300", text: "text-emerald-950", glow: "shadow-emerald-300/45" },
+  S: { label: "Sulfur", valence: 2, category: "nonmetal", shell: "bg-yellow-100 border-yellow-300", text: "text-yellow-950", glow: "shadow-yellow-300/45" },
+  Cl: { label: "Chlorine", valence: 1, category: "halogen", shell: "bg-green-100 border-green-300", text: "text-green-950", glow: "shadow-green-300/45" },
+  Na: { label: "Sodium", valence: 1, category: "metal", shell: "bg-stone-200 border-stone-400", text: "text-stone-950", glow: "shadow-stone-400/40" },
+  Mg: { label: "Magnesium", valence: 2, category: "metal", shell: "bg-slate-200 border-slate-400", text: "text-slate-950", glow: "shadow-slate-400/40" },
+  Ca: { label: "Calcium", valence: 2, category: "metal", shell: "bg-neutral-200 border-neutral-400", text: "text-neutral-950", glow: "shadow-neutral-400/40" },
+  Fe: { label: "Iron", valence: 2, category: "metal", shell: "bg-orange-200 border-orange-400", text: "text-orange-950", glow: "shadow-orange-400/40" },
+  Cu: { label: "Copper", valence: 2, category: "metal", shell: "bg-amber-200 border-amber-500", text: "text-amber-950", glow: "shadow-amber-400/40" },
+  Zn: { label: "Zinc", valence: 2, category: "metal", shell: "bg-blue-100 border-blue-300", text: "text-blue-950", glow: "shadow-blue-300/40" },
+  He: { label: "Helium", valence: 0, category: "noble", shell: "bg-violet-100 border-violet-300", text: "text-violet-950", glow: "shadow-violet-300/35" },
+  Ne: { label: "Neon", valence: 0, category: "noble", shell: "bg-fuchsia-100 border-fuchsia-300", text: "text-fuchsia-950", glow: "shadow-fuchsia-300/35" },
+  Ar: { label: "Argon", valence: 0, category: "noble", shell: "bg-purple-100 border-purple-300", text: "text-purple-950", glow: "shadow-purple-300/35" },
+  Xe: { label: "Xenon", valence: 2, category: "noble", shell: "bg-teal-100 border-teal-300", text: "text-teal-950", glow: "shadow-teal-300/35" },
+  Ph: { label: "Benzene ring", valence: 1, category: "group", shell: "bg-cyan-950 border-cyan-500", text: "text-cyan-50", glow: "shadow-cyan-500/35" },
+};
+
+export const EFFECT_STYLES: Record<EffectKind, EffectStyle> = {
+  clean: { tag: "無毒", ring: "ring-emerald-300", panel: "border-emerald-200 bg-emerald-50 text-emerald-950", stroke: "#10b981" },
+  toxic: { tag: "有毒", ring: "ring-fuchsia-300", panel: "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-950", stroke: "#d946ef" },
+  sleep: { tag: "麻酔", ring: "ring-violet-300", panel: "border-violet-200 bg-violet-50 text-violet-950", stroke: "#8b5cf6" },
+  energy: { tag: "可燃", ring: "ring-amber-300", panel: "border-amber-200 bg-amber-50 text-amber-950", stroke: "#f59e0b" },
+  reactive: { tag: "反応性", ring: "ring-orange-300", panel: "border-orange-200 bg-orange-50 text-orange-950", stroke: "#f97316" },
+  salt: { tag: "塩", ring: "ring-blue-300", panel: "border-blue-200 bg-blue-50 text-blue-950", stroke: "#2563eb" },
+  inert: { tag: "希ガス", ring: "ring-teal-300", panel: "border-teal-200 bg-teal-50 text-teal-950", stroke: "#14b8a6" },
+};
