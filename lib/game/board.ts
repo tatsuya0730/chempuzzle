@@ -1,28 +1,21 @@
 import type { CellTile, Direction, Grid, Position, Tile, TokenSymbol } from "@/types/game";
 import { ALL_DIRECTIONS, CELL_H, CELL_W, COLS, ROW_OFFSET, ROWS, STEP_X, STEP_Y } from "./config";
-import { TOKENS } from "./tokens";
 
 export const createEmptyGrid = (): Grid => Array.from({ length: ROWS }, () => Array(COLS).fill(null));
 export const positionKey = ({ row, col }: Position) => `${row},${col}`;
 export const tileKey = (row: number, col: number) => `${row},${col}`;
 export const inBounds = (row: number, col: number) => row >= 0 && row < ROWS && col >= 0 && col < COLS;
 
-export const createHands = (token: TokenSymbol): Direction[] => {
-  const valence = Math.min(TOKENS[token].valence, ALL_DIRECTIONS.length);
-  if (valence <= 0) return [];
-  const pool = [...ALL_DIRECTIONS];
-  if (valence <= 2) return pool.sort(() => Math.random() - 0.5).slice(0, valence) as Direction[];
-  return pool.slice(0, valence) as Direction[];
-};
+export const createHands = (): Direction[] => [];
 
-export const createCellTile = (token: TokenSymbol): CellTile => ({ token, hands: createHands(token) });
+export const createCellTile = (token: TokenSymbol): CellTile => ({ token, hands: createHands() });
 
 export const getCurrentVisualCenter = (row: number, col: number) => ({
   x: col * STEP_X + CELL_W / 2,
   y: row * STEP_Y + CELL_H / 2,
 });
 
-export const makeTile = (token: TokenSymbol, hands = createHands(token)): Tile => {
+export const makeTile = (token: TokenSymbol, hands = createHands()): Tile => {
   const row = -1;
   const col = Math.floor(COLS / 2);
   const { x, y } = getCurrentVisualCenter(row, col);
@@ -70,9 +63,7 @@ export const handsConnect = (grid: Grid, a: Position, b: Position) => {
   const from = grid[a.row][a.col];
   const to = grid[b.row][b.col];
   if (!from || !to) return false;
-  const direction = getDirectionBetween(a, b);
-  if (direction === null) return false;
-  return from.hands.includes(direction) && to.hands.includes(getOppositeDirection(direction));
+  return areAdjacent(a, b);
 };
 
 export const compressGrid = (grid: Grid) => {

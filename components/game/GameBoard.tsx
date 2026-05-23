@@ -39,7 +39,7 @@ export function GameBoard({
                   }`}
                 >
                   {isPredicted ? <div className="absolute inset-[4px] rounded-full border border-cyan-300/70 bg-cyan-200/30" /> : null}
-                  {cell ? <TokenOrb token={cell.token} hands={cell.hands} clearing={Boolean(match)} /> : null}
+                  {cell ? <TokenOrb token={cell.token} clearing={Boolean(match)} /> : null}
                   {match ? <span className={`effect-burst effect-${match.molecule.effect}`} /> : null}
                 </div>
               );
@@ -54,7 +54,7 @@ export function GameBoard({
               top: `${current.screenY - CELL_H / 2}px`,
             }}
           >
-            <TokenOrb token={current.token} hands={current.hands} active={true} clearing={false} />
+            <TokenOrb token={current.token} active={true} clearing={false} />
           </div>
         ) : null}
       </div>

@@ -29,7 +29,7 @@ export default function Home() {
             />
           </div>
 
-          <ReactionHistory reactionLog={game.reactionLog} score={game.score} level={game.level} />
+          <ReactionHistory reactionLog={game.reactionLog} />
         </section>
 
         <RankingMock />
