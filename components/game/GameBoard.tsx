@@ -1,11 +1,26 @@
-import type { Grid, Match, Tile } from "@/types/game";
-import { BOARD_HEIGHT, BOARD_WIDTH, ROW_OFFSET } from "@/lib/game/config";
+import type { Grid, Match, Position, Tile } from "@/types/game";
+import { BOARD_HEIGHT, BOARD_WIDTH, CELL_H, CELL_W, ROW_OFFSET } from "@/lib/game/config";
 import { tileKey } from "@/lib/game/board";
 import { EFFECT_STYLES } from "@/lib/game/tokens";
 import { BeakerBonds } from "./BeakerBonds";
 import { TokenOrb } from "./TokenOrb";
 
-export function GameBoard({ displayGrid, current, clearing, clearingMatches }: { displayGrid: Grid; current: Tile; clearing: Map<string, Match>; clearingMatches: Match[] }) {
+export function GameBoard({
+  displayGrid,
+  current,
+  predictedLanding,
+  clearing,
+  clearingMatches,
+}: {
+  displayGrid: Grid;
+  current: Tile;
+  predictedLanding: Position;
+  clearing: Map<string, Match>;
+  clearingMatches: Match[];
+}) {
+  const showPrediction = predictedLanding.row >= 0;
+  const showCurrentToken = current.row >= 0;
+
   return (
     <div className="beaker-frame flex flex-1 items-center justify-center overflow-auto p-5">
       <div className="relative mx-auto py-2" style={{ width: `${BOARD_WIDTH}px`, height: `${BOARD_HEIGHT + 16}px` }}>
@@ -15,6 +30,7 @@ export function GameBoard({ displayGrid, current, clearing, clearingMatches }: {
             {row.map((cell, colIndex) => {
               const key = tileKey(rowIndex, colIndex);
               const match = clearing.get(key);
+              const isPredicted = showPrediction && predictedLanding.row === rowIndex && predictedLanding.col === colIndex;
               return (
                 <div
                   key={key}
@@ -22,13 +38,25 @@ export function GameBoard({ displayGrid, current, clearing, clearingMatches }: {
                     match ? "ring-4" : ""
                   }`}
                 >
-                  {cell ? <TokenOrb token={cell.token} hands={cell.hands} active={current.row === rowIndex && current.col === colIndex} clearing={Boolean(match)} /> : null}
+                  {isPredicted ? <div className="absolute inset-[4px] rounded-full border border-cyan-300/70 bg-cyan-200/30" /> : null}
+                  {cell ? <TokenOrb token={cell.token} hands={cell.hands} clearing={Boolean(match)} /> : null}
                   {match ? <span className={`effect-burst effect-${match.molecule.effect}`} /> : null}
                 </div>
               );
             })}
           </div>
         ))}
+        {showCurrentToken ? (
+          <div
+            className="pointer-events-none absolute z-20"
+            style={{
+              left: `${current.screenX - CELL_W / 2}px`,
+              top: `${current.screenY - CELL_H / 2}px`,
+            }}
+          >
+            <TokenOrb token={current.token} hands={current.hands} active={true} clearing={false} />
+          </div>
+        ) : null}
       </div>
     </div>
   );

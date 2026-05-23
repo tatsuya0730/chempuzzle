@@ -28,7 +28,14 @@ export type CellTile = {
 export type Cell = CellTile | null;
 export type Grid = Cell[][];
 export type Position = { row: number; col: number };
-export type Tile = { token: TokenSymbol; hands: Direction[]; row: number; col: number };
+export type Tile = {
+  token: TokenSymbol;
+  hands: Direction[];
+  row: number;
+  col: number;
+  screenX: number;
+  screenY: number;
+};
 export type EffectKind = "clean" | "toxic" | "sleep" | "energy" | "reactive" | "salt" | "inert";
 export type TokenCategory = "organic" | "nonmetal" | "halogen" | "metal" | "noble" | "group";
 

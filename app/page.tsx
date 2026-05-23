@@ -20,7 +20,13 @@ export default function Home() {
         <section className="grid flex-1 gap-5 lg:grid-cols-[minmax(650px,1fr)_360px]">
           <div className="flex min-h-0 flex-col">
             <GameHud score={game.score} level={game.level} nextQueue={game.nextQueue} />
-            <GameBoard displayGrid={game.displayGrid} current={game.current} clearing={game.clearing} clearingMatches={game.clearingMatches} />
+            <GameBoard
+              displayGrid={game.displayGrid}
+              current={game.current}
+              predictedLanding={game.predictedLanding}
+              clearing={game.clearing}
+              clearingMatches={game.clearingMatches}
+            />
           </div>
 
           <ReactionHistory reactionLog={game.reactionLog} score={game.score} level={game.level} />

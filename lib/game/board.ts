@@ -16,7 +16,19 @@ export const createHands = (token: TokenSymbol): Direction[] => {
 };
 
 export const createCellTile = (token: TokenSymbol): CellTile => ({ token, hands: createHands(token) });
-export const makeTile = (token: TokenSymbol, hands = createHands(token)): Tile => ({ token, hands, row: -1, col: Math.floor(COLS / 2) });
+
+export const getCurrentVisualCenter = (row: number, col: number) => ({
+  x: col * STEP_X + CELL_W / 2,
+  y: row * STEP_Y + CELL_H / 2,
+});
+
+export const makeTile = (token: TokenSymbol, hands = createHands(token)): Tile => {
+  const row = -1;
+  const col = Math.floor(COLS / 2);
+  const { x, y } = getCurrentVisualCenter(row, col);
+
+  return { token, hands, row, col, screenX: x, screenY: y };
+};
 
 export const getCellCenter = ({ row, col }: Position) => ({
   x: (row % 2 === 0 ? 0 : ROW_OFFSET) + col * STEP_X + CELL_W / 2,
@@ -99,6 +111,69 @@ export const compressGrid = (grid: Grid) => {
   }
 
   return nextGrid;
+};
+
+export const getDownSupport = (row: number, col: number) => {
+  const nextRow = row + 1;
+  const current = { row: nextRow, col };
+  const side = row % 2 === 0 ? { row: nextRow, col: col - 1 } : { row: nextRow, col: col + 1 };
+
+  return { current, side };
+};
+
+export const getSlideTarget = (grid: Grid, row: number, col: number): Position | null => {
+  const { current, side } = getDownSupport(row, col);
+
+  const currentInBounds = inBounds(current.row, current.col);
+  const sideInBounds = inBounds(side.row, side.col);
+  const currentOccupied = currentInBounds && grid[current.row][current.col] !== null;
+  const sideOccupied = sideInBounds && grid[side.row][side.col] !== null;
+
+  if (currentOccupied && !sideOccupied && sideInBounds && grid[side.row][side.col] === null) {
+    const next = getSlideTarget(grid, side.row, side.col);
+    return next ?? side;
+  }
+
+  if (sideOccupied && !currentOccupied && currentInBounds && grid[current.row][current.col] === null) {
+    const next = getSlideTarget(grid, current.row, current.col);
+    return next ?? current;
+  }
+
+  return null;
+};
+
+export const getNextDropPosition = (grid: Grid, current: Tile): Position | null => {
+  const nextRow = current.row + 1;
+
+  if (nextRow >= ROWS) {
+    return null;
+  }
+
+  if (grid[nextRow][current.col] !== null) {
+    return null;
+  }
+
+  return { row: nextRow, col: current.col };
+};
+
+export const getDropDestination = (grid: Grid, current: Tile): Position => {
+  let row = current.row;
+  const col = current.col;
+
+  while (true) {
+    const nextRow = row + 1;
+
+    if (nextRow >= ROWS) {
+      return { row: ROWS - 1, col };
+    }
+
+    if (grid[nextRow][col] === null) {
+      row = nextRow;
+      continue;
+    }
+
+    return { row, col };
+  }
 };
 
 export const mergeCurrentIntoGrid = (grid: Grid, current: Tile): Grid => {

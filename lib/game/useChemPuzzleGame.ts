@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Match, ReactionLog, ResultSummary, TokenSymbol } from "@/types/game";
 import { CLEAR_DELAY, COLS, INITIAL_CURRENT, INITIAL_HANDS, INITIAL_QUEUE, MAX_LOG, ROWS } from "./config";
-import { compressGrid, createEmptyGrid, makeTile, mergeCurrentIntoGrid, tileKey, positionKey } from "./board";
+import { compressGrid, createEmptyGrid, getCurrentVisualCenter, getDropDestination, getNextDropPosition, makeTile, tileKey, positionKey } from "./board";
 import { getChainBonus, getFallInterval, getWeightedToken } from "./scoring";
 import { pickBestMatches } from "./reactions";
 
@@ -59,29 +59,41 @@ export function useChemPuzzleGame() {
     (direction: -1 | 1) => {
       if (gameOver || isResolving || !isRunning) return;
       const nextCol = current.col + direction;
-      if (canMoveTo(current.row, nextCol)) setCurrent((prev) => ({ ...prev, col: nextCol }));
+      if (canMoveTo(current.row, nextCol)) {
+        setCurrent((prev) => ({
+          ...prev,
+          col: nextCol,
+          screenX: getCurrentVisualCenter(prev.row, nextCol).x,
+        }));
+      }
     },
     [canMoveTo, current.col, current.row, gameOver, isResolving, isRunning],
   );
 
   const softDrop = useCallback(() => {
     if (gameOver || isResolving || !isRunning) return;
-    const nextRow = current.row + 1;
-    if (nextRow >= ROWS || !canMoveTo(nextRow, current.col)) {
+
+    const nextPosition = getNextDropPosition(grid, current);
+    if (nextPosition === null) {
       settleTile(current.row, current.col);
       return;
     }
-    setCurrent((prev) => ({ ...prev, row: nextRow }));
-  }, [canMoveTo, current.col, current.row, gameOver, isResolving, isRunning, settleTile]);
+
+    const { x, y } = getCurrentVisualCenter(nextPosition.row, nextPosition.col);
+    setCurrent((prev) => ({
+      ...prev,
+      row: nextPosition.row,
+      col: nextPosition.col,
+      screenX: x,
+      screenY: y,
+    }));
+  }, [current, gameOver, grid, isResolving, isRunning, settleTile]);
 
   const hardDrop = useCallback(() => {
     if (gameOver || isResolving || !isRunning) return;
-    let row = current.row;
-    while (row + 1 < ROWS && grid[row + 1][current.col] === null) {
-      row += 1;
-    }
-    settleTile(row, current.col);
-  }, [current.col, current.row, gameOver, grid, isResolving, isRunning, settleTile]);
+    const landing = getDropDestination(grid, current);
+    settleTile(landing.row, landing.col);
+  }, [current, gameOver, grid, isResolving, isRunning, settleTile]);
 
   const resetGame = useCallback(() => {
     reactionTimers.current.forEach((timer) => window.clearTimeout(timer));
@@ -207,7 +219,8 @@ export function useChemPuzzleGame() {
     return () => window.removeEventListener("keydown", handleKeydown);
   }, [hardDrop, moveCurrent, softDrop, toggleRunning]);
 
-  const displayGrid = useMemo(() => mergeCurrentIntoGrid(grid, current), [current, grid]);
+  const displayGrid = useMemo(() => grid, [grid]);
+  const predictedLanding = useMemo(() => getDropDestination(grid, current), [current, grid]);
   const resultSummary = useMemo<ResultSummary>(() => {
     const counts = reactionLog.reduce(
       (acc, entry) => {
@@ -240,6 +253,7 @@ export function useChemPuzzleGame() {
     reactionLog,
     resultSummary,
     displayGrid,
+    predictedLanding,
     resetGame,
     toggleRunning,
   };
