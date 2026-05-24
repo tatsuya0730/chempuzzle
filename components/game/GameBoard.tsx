@@ -22,7 +22,7 @@ export function GameBoard({
   const showCurrentToken = current.row >= 0;
 
   return (
-    <div className="beaker-frame flex flex-1 items-center justify-center overflow-auto p-5">
+    <div className="beaker-frame flex w-full items-center justify-center overflow-auto p-5">
       <div className="relative mx-auto py-2" style={{ width: `${BOARD_WIDTH}px`, height: `${BOARD_HEIGHT + 16}px` }}>
         <BeakerBonds matches={clearingMatches} />
         {displayGrid.map((row, rowIndex) => (
