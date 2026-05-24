@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ComboNotice, Match, ReactionLog, ResultSummary, TokenSymbol } from "@/types/game";
 import { CLEAR_DELAY, COLS, INITIAL_CURRENT, INITIAL_HANDS, INITIAL_QUEUE, MAX_LOG, ROWS } from "./config";
-import { compressGrid, createEmptyGrid, getCurrentVisualCenter, getDropDestination, getNextDropPosition, makeTile, tileKey, positionKey } from "./board";
+import { compressGrid, createEmptyGrid, createHands, getCurrentVisualCenter, getDropDestination, getNextDropPosition, makeTile, tileKey, positionKey } from "./board";
 import { getChainBonus, getFallInterval, getWeightedToken } from "./scoring";
 import { pickBestMatches } from "./reactions";
 
@@ -15,6 +15,8 @@ export function useChemPuzzleGame() {
   const [isRunning, setIsRunning] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [current, setCurrent] = useState(() => makeTile(INITIAL_CURRENT, [...INITIAL_HANDS]));
+  const [holdToken, setHoldToken] = useState<TokenSymbol | null>(null);
+  const [tokenActionUsed, setTokenActionUsed] = useState(false);
   const [nextQueue, setNextQueue] = useState<TokenSymbol[]>(INITIAL_QUEUE);
   const [clearing, setClearing] = useState<Map<string, Match>>(new Map());
   const [clearingMatches, setClearingMatches] = useState<Match[]>([]);
@@ -55,6 +57,7 @@ export function useChemPuzzleGame() {
         return compressGrid(nextGrid);
       });
       spawnNext();
+      setTokenActionUsed(false);
     },
     [current.hands, current.token, spawnNext],
   );
@@ -99,6 +102,43 @@ export function useChemPuzzleGame() {
     settleTile(landing.row, landing.col);
   }, [current, gameOver, grid, isResolving, isRunning, settleTile]);
 
+  const canUseTokenAction = !gameOver && !isResolving && isRunning && !tokenActionUsed;
+
+  const replaceCurrentToken = useCallback((token: TokenSymbol) => {
+    setCurrent((prev) => ({
+      ...prev,
+      token,
+      hands: createHands(),
+    }));
+  }, []);
+
+  const holdCurrent = useCallback(() => {
+    if (!canUseTokenAction) return;
+
+    if (holdToken) {
+      setHoldToken(current.token);
+      replaceCurrentToken(holdToken);
+    } else {
+      const [nextToken, ...rest] = nextQueue;
+      if (!nextToken) return;
+      setHoldToken(current.token);
+      replaceCurrentToken(nextToken);
+      setNextQueue([...rest, getWeightedToken(level)]);
+    }
+
+    setTokenActionUsed(true);
+  }, [canUseTokenAction, current.token, holdToken, level, nextQueue, replaceCurrentToken]);
+
+  const swapWithNext = useCallback(() => {
+    if (!canUseTokenAction) return;
+    const [nextToken, ...rest] = nextQueue;
+    if (!nextToken) return;
+
+    replaceCurrentToken(nextToken);
+    setNextQueue([current.token, ...rest]);
+    setTokenActionUsed(true);
+  }, [canUseTokenAction, current.token, nextQueue, replaceCurrentToken]);
+
   const resetGame = useCallback(() => {
     reactionTimers.current.forEach((timer) => window.clearTimeout(timer));
     reactionTimers.current = [];
@@ -115,6 +155,8 @@ export function useChemPuzzleGame() {
     setIsResolving(false);
     setIsRunning(true);
     setCurrent(makeTile(getWeightedToken(1)));
+    setHoldToken(null);
+    setTokenActionUsed(false);
     setNextQueue([getWeightedToken(1), getWeightedToken(1), getWeightedToken(1)]);
     setClearing(new Map());
     setClearingMatches([]);
@@ -242,12 +284,22 @@ export function useChemPuzzleGame() {
           event.preventDefault();
           toggleRunning();
           break;
+        case "c":
+        case "C":
+          event.preventDefault();
+          holdCurrent();
+          break;
+        case "x":
+        case "X":
+          event.preventDefault();
+          swapWithNext();
+          break;
       }
     };
 
     window.addEventListener("keydown", handleKeydown);
     return () => window.removeEventListener("keydown", handleKeydown);
-  }, [hardDrop, moveCurrent, softDrop, toggleRunning]);
+  }, [hardDrop, holdCurrent, moveCurrent, softDrop, swapWithNext, toggleRunning]);
 
   const displayGrid = useMemo(() => grid, [grid]);
   const predictedLanding = useMemo(() => getDropDestination(grid, current), [current, grid]);
@@ -277,6 +329,8 @@ export function useChemPuzzleGame() {
     gameOver,
     isRunning,
     current,
+    holdToken,
+    canUseTokenAction,
     nextQueue,
     clearing,
     clearingMatches,
@@ -287,5 +341,7 @@ export function useChemPuzzleGame() {
     predictedLanding,
     resetGame,
     toggleRunning,
+    holdCurrent,
+    swapWithNext,
   };
 }

@@ -23,9 +23,27 @@ function ComboFlash({ combo }: { combo: ComboNotice }) {
   );
 }
 
-export function GameHud({ score, level, nextQueue, comboNotice }: { score: number; level: number; nextQueue: TokenSymbol[]; comboNotice: ComboNotice | null }) {
+export function GameHud({
+  score,
+  level,
+  holdToken,
+  nextQueue,
+  comboNotice,
+  canUseTokenAction,
+  onHold,
+  onSwapNext,
+}: {
+  score: number;
+  level: number;
+  holdToken: TokenSymbol | null;
+  nextQueue: TokenSymbol[];
+  comboNotice: ComboNotice | null;
+  canUseTokenAction: boolean;
+  onHold: () => void;
+  onSwapNext: () => void;
+}) {
   return (
-    <div className="mb-3 grid gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-lg shadow-slate-200/70 sm:grid-cols-[minmax(260px,1fr)_auto] lg:grid-cols-[minmax(340px,1fr)_auto_minmax(190px,220px)] lg:items-center">
+    <div className="mb-3 grid gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-lg shadow-slate-200/70 sm:grid-cols-[minmax(260px,1fr)_auto] xl:grid-cols-[minmax(320px,1fr)_156px_auto_minmax(190px,220px)] xl:items-center">
       <div className="grid grid-cols-[minmax(0,2fr)_minmax(92px,0.75fr)] gap-2">
         <div className="rounded-lg bg-slate-950 px-5 py-3 text-white">
           <p className="text-xs font-bold uppercase text-slate-400">Score</p>
@@ -37,7 +55,33 @@ export function GameHud({ score, level, nextQueue, comboNotice }: { score: numbe
         </div>
       </div>
       <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-        <p className="text-xs font-bold uppercase text-slate-500">Next</p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-bold uppercase text-slate-500">Hold</p>
+          <button
+            type="button"
+            onClick={onHold}
+            disabled={!canUseTokenAction}
+            className="rounded-md bg-slate-950 px-2 py-1 text-xs font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+          >
+            C
+          </button>
+        </div>
+        <div className="mt-2 flex h-8 items-center">
+          {holdToken ? <MiniToken token={holdToken} /> : <span className="text-xs font-bold text-slate-400">empty</span>}
+        </div>
+      </div>
+      <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-bold uppercase text-slate-500">Next</p>
+          <button
+            type="button"
+            onClick={onSwapNext}
+            disabled={!canUseTokenAction}
+            className="rounded-md bg-slate-950 px-2 py-1 text-xs font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+          >
+            X
+          </button>
+        </div>
         <div className="mt-2 flex gap-2">
           {nextQueue.map((token, index) => (
             <MiniToken key={`${token}-${index}`} token={token} />

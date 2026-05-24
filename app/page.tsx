@@ -19,7 +19,16 @@ export default function Home() {
 
         <section className="grid flex-1 gap-5 lg:grid-cols-[minmax(650px,1fr)_360px]">
           <div className="flex min-h-0 flex-col">
-            <GameHud score={game.score} level={game.level} nextQueue={game.nextQueue} comboNotice={game.comboNotice} />
+            <GameHud
+              score={game.score}
+              level={game.level}
+              holdToken={game.holdToken}
+              nextQueue={game.nextQueue}
+              comboNotice={game.comboNotice}
+              canUseTokenAction={game.canUseTokenAction}
+              onHold={game.holdCurrent}
+              onSwapNext={game.swapWithNext}
+            />
             <GameBoard
               displayGrid={game.displayGrid}
               current={game.current}
@@ -27,11 +36,13 @@ export default function Home() {
               clearing={game.clearing}
               clearingMatches={game.clearingMatches}
             />
-            <div className="mt-3 grid gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-600 shadow-lg shadow-slate-200/60 sm:grid-cols-4 sm:items-center">
+            <div className="mt-3 grid gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-600 shadow-lg shadow-slate-200/60 sm:grid-cols-3 lg:grid-cols-6 lg:items-center">
               <p className="font-black uppercase text-slate-500">Controls</p>
               <p>← / A 右左移動</p>
               <p>↓ / S ソフトドロップ</p>
               <p>Space ハードドロップ / Enter Start</p>
+              <p>C ホールド</p>
+              <p>X Next交換</p>
             </div>
           </div>
 
