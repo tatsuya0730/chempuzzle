@@ -103,6 +103,15 @@ export type ReactionLog = {
   imageUrl?: string;
 };
 
+export type ComboNotice = {
+  id: number;
+  chain: number;
+  matchCount: number;
+  bonusPoints: number;
+  gainedPoints: number;
+  formulas: string[];
+};
+
 export type ResultSummary = {
   score: number;
   reactionCount: number;

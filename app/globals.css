@@ -145,6 +145,11 @@ body {
   animation: molecule-pop 520ms ease-in-out forwards;
 }
 
+.combo-flash {
+  min-width: 190px;
+  animation: combo-flash 1.18s ease-out both;
+}
+
 .effect-burst {
   position: absolute;
   inset: -12px;
@@ -222,6 +227,25 @@ body {
   }
 }
 
+@keyframes combo-flash {
+  0% {
+    transform: translateY(8px) scale(0.96);
+    opacity: 0;
+  }
+  18% {
+    transform: translateY(0) scale(1.03);
+    opacity: 1;
+  }
+  70% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-3px) scale(0.98);
+    opacity: 0;
+  }
+}
+
 @keyframes bond-draw {
   0% {
     opacity: 0;
@@ -238,6 +262,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .molecule-pop,
+  .combo-flash,
   .effect-burst,
   .reaction-bond {
     animation-duration: 1ms;

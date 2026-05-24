@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Match, ReactionLog, ResultSummary, TokenSymbol } from "@/types/game";
+import type { ComboNotice, Match, ReactionLog, ResultSummary, TokenSymbol } from "@/types/game";
 import { CLEAR_DELAY, COLS, INITIAL_CURRENT, INITIAL_HANDS, INITIAL_QUEUE, MAX_LOG, ROWS } from "./config";
 import { compressGrid, createEmptyGrid, getCurrentVisualCenter, getDropDestination, getNextDropPosition, makeTile, tileKey, positionKey } from "./board";
 import { getChainBonus, getFallInterval, getWeightedToken } from "./scoring";
@@ -19,9 +19,13 @@ export function useChemPuzzleGame() {
   const [clearing, setClearing] = useState<Map<string, Match>>(new Map());
   const [clearingMatches, setClearingMatches] = useState<Match[]>([]);
   const [reactionLog, setReactionLog] = useState<ReactionLog[]>([]);
+  const [comboNotice, setComboNotice] = useState<ComboNotice | null>(null);
   const logId = useRef(0);
+  const comboId = useRef(0);
+  const chainDepth = useRef(0);
   const reactionInFlight = useRef(false);
   const reactionTimers = useRef<number[]>([]);
+  const comboTimer = useRef<number | null>(null);
 
   const canMoveTo = useCallback(
     (row: number, col: number) => {
@@ -98,7 +102,12 @@ export function useChemPuzzleGame() {
   const resetGame = useCallback(() => {
     reactionTimers.current.forEach((timer) => window.clearTimeout(timer));
     reactionTimers.current = [];
+    if (comboTimer.current !== null) {
+      window.clearTimeout(comboTimer.current);
+      comboTimer.current = null;
+    }
     reactionInFlight.current = false;
+    chainDepth.current = 0;
     setGrid(createEmptyGrid());
     setScore(0);
     setLevel(1);
@@ -110,6 +119,7 @@ export function useChemPuzzleGame() {
     setClearing(new Map());
     setClearingMatches([]);
     setReactionLog([]);
+    setComboNotice(null);
   }, []);
 
   const toggleRunning = useCallback(() => {
@@ -129,19 +139,39 @@ export function useChemPuzzleGame() {
   useEffect(() => {
     if (reactionInFlight.current) return;
     const matches = pickBestMatches(grid);
-    if (matches.length === 0) return;
+    if (matches.length === 0) {
+      chainDepth.current = 0;
+      return;
+    }
     reactionInFlight.current = true;
+    chainDepth.current += 1;
 
     const nextClearing = new Map<string, Match>();
     matches.forEach((match) => match.positions.forEach((pos) => nextClearing.set(positionKey(pos), match)));
     const basePoints = matches.reduce((sum, match) => sum + match.points, 0);
     const chainBonus = getChainBonus(basePoints, matches.length);
     const gained = basePoints + chainBonus;
+    const nextComboNotice: ComboNotice = {
+      id: (comboId.current += 1),
+      chain: chainDepth.current,
+      matchCount: matches.length,
+      bonusPoints: chainBonus,
+      gainedPoints: gained,
+      formulas: matches.map((match) => match.molecule.formula),
+    };
 
     const startTimer = window.setTimeout(() => {
       setIsResolving(true);
       setClearing(nextClearing);
       setClearingMatches(matches);
+      setComboNotice(nextComboNotice);
+      if (comboTimer.current !== null) {
+        window.clearTimeout(comboTimer.current);
+      }
+      comboTimer.current = window.setTimeout(() => {
+        setComboNotice(null);
+        comboTimer.current = null;
+      }, CLEAR_DELAY + 760);
       setScore((prev) => prev + gained);
       setLevel((prev) => Math.min(20, prev + matches.length));
       setReactionLog((prev) =>
@@ -250,6 +280,7 @@ export function useChemPuzzleGame() {
     nextQueue,
     clearing,
     clearingMatches,
+    comboNotice,
     reactionLog,
     resultSummary,
     displayGrid,
