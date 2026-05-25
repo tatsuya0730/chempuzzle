@@ -3,7 +3,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import type { ComboNotice, ReactionLog, ResultSummary, TokenSymbol } from "@/types/game";
 import { INITIAL_CURRENT, INITIAL_QUEUE, MAX_LOG } from "@/lib/game/config";
-import { DEFAULT_GAME_ATOMS } from "@/lib/game/periodic";
+import { DEFAULT_GAME_ATOMS, PERIODIC_ELEMENTS } from "@/lib/game/periodic";
 import { getWeightedToken } from "@/lib/game/scoring";
 import { EFFECT_STYLES, TOKENS } from "@/lib/game/tokens";
 import { createAtomEntity, getPotentialMolecules, type PhysicsEntity, type PhysicsReaction, resolvePhysicsReaction } from "@/lib/game/physicsChemistry";
@@ -34,6 +34,7 @@ const HEIGHT = 640;
 const LEFT_WALL = 12;
 const RIGHT_WALL = WIDTH - 12;
 const DROP_Y = 62;
+const ATOMIC_NUMBERS = Object.fromEntries(PERIODIC_ELEMENTS.map((element) => [element.symbol, element.atomicNumber])) as Partial<Record<TokenSymbol, number>>;
 
 type PhaserModule = typeof import("phaser");
 type MatterImage = Phaser.Physics.Matter.Image;
@@ -146,12 +147,34 @@ const getInitialQueue = (enabledAtoms: TokenSymbol[]) => {
   return queue;
 };
 
-export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: TokenSymbol[]; onSnapshot: (snapshot: PhysicsGameSnapshot) => void }>(function PhysicsChemPuzzle({ enabledAtoms: activeAtoms = DEFAULT_GAME_ATOMS, onSnapshot }, ref) {
+const getEntityLabel = (entity: Omit<PhysicsEntity, "id">, showAtomicNumbers: boolean) => {
+  if (entity.formula === "Ph" || entity.formula === "Fire") return "";
+  if (!showAtomicNumbers || entity.kind !== "atom") return entity.formula;
+  const atomicNumber = ATOMIC_NUMBERS[entity.atoms[0]];
+  return atomicNumber ? `${entity.formula}\n${atomicNumber}` : entity.formula;
+};
+
+const getLabelFontSize = (entity: Omit<PhysicsEntity, "id">, showAtomicNumbers: boolean) =>
+  `${showAtomicNumbers && entity.kind === "atom" ? Math.max(10, Math.min(15, entity.radius * 0.44)) : Math.max(11, Math.min(19, entity.radius * 0.54))}px`;
+
+export const PhysicsChemPuzzle = forwardRef<
+  PhysicsGameHandle,
+  {
+    enabledAtoms?: TokenSymbol[];
+    showMoleculeHints?: boolean;
+    showAtomicNumbers?: boolean;
+    onSnapshot: (snapshot: PhysicsGameSnapshot) => void;
+  }
+>(function PhysicsChemPuzzle({ enabledAtoms: activeAtoms = DEFAULT_GAME_ATOMS, showMoleculeHints = true, showAtomicNumbers = true, onSnapshot }, ref) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const sceneRef = useRef<PhysicsGameHandle | null>(null);
   const snapshotRef = useRef(onSnapshot);
+  const showMoleculeHintsRef = useRef(showMoleculeHints);
+  const showAtomicNumbersRef = useRef(showAtomicNumbers);
 
   snapshotRef.current = onSnapshot;
+  showMoleculeHintsRef.current = showMoleculeHints;
+  showAtomicNumbersRef.current = showAtomicNumbers;
 
   useImperativeHandle(ref, () => ({
     resetGame: () => sceneRef.current?.resetGame(),
@@ -322,12 +345,13 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
           body.setFrictionAir(0.006);
           body.setBounce(0.16);
           body.setData("entityId", id);
-          const label = this.add.text(x, y, entity.formula === "Ph" || entity.formula === "Fire" ? "" : entity.formula, {
+          const label = this.add.text(x, y, getEntityLabel(entity, showAtomicNumbersRef.current), {
             fontFamily: "Arial, Helvetica, sans-serif",
-            fontSize: `${Math.max(11, Math.min(19, entity.radius * 0.54))}px`,
+            fontSize: getLabelFontSize(entity, showAtomicNumbersRef.current),
             fontStyle: "900",
             color: TOKEN_COLORS[entity.atoms[0]]?.text ?? "#0f172a",
             align: "center",
+            lineSpacing: -4,
           });
           label.setOrigin(0.5);
           label.setDepth(20);
@@ -455,6 +479,10 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
         }
 
         updateHoverPanel(pointerX: number, pointerY: number) {
+          if (!showMoleculeHintsRef.current) {
+            this.hideHoverPanel();
+            return;
+          }
           const hovered = [...this.entities.values()]
             .filter((entity) => entity.id !== this.currentId)
             .find((entity) => Phaser.Math.Distance.Between(pointerX, pointerY, entity.body.x, entity.body.y) <= entity.radius + 10);
@@ -629,7 +657,7 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
             targets: label,
             y: y - 74,
             alpha: 0,
-            duration: 900,
+            duration: 1500,
             ease: "Cubic.easeOut",
             onComplete: () => label.destroy(),
           });
@@ -637,6 +665,9 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
 
         update() {
           this.entities.forEach((entity) => {
+            const nextLabel = getEntityLabel(entity, showAtomicNumbersRef.current);
+            if (entity.label.text !== nextLabel) entity.label.setText(nextLabel);
+            entity.label.setFontSize(getLabelFontSize(entity, showAtomicNumbersRef.current));
             entity.label.setPosition(entity.body.x, entity.body.y);
             entity.label.setRotation(0);
             const velocityY = entity.body.body?.velocity.y ?? 0;

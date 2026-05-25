@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { GameDisplaySettings } from "@/components/game/GameDisplaySettings";
 import { GameHud } from "@/components/game/GameHud";
 import { INITIAL_PHYSICS_GAME_SNAPSHOT, PhysicsChemPuzzle, type PhysicsGameHandle } from "@/components/game/PhysicsChemPuzzle";
 import { FormedMoleculesHistory, GameStatusPanel, MoleculeGrowthList } from "@/components/game/ReactionHistory";
@@ -12,6 +13,8 @@ import { useAtomSelection } from "@/components/game/useAtomSelection";
 export function SoloPlayScreen() {
   const gameRef = useRef<PhysicsGameHandle | null>(null);
   const [game, setGame] = useState(INITIAL_PHYSICS_GAME_SNAPSHOT);
+  const [showMoleculeHints, setShowMoleculeHints] = useState(true);
+  const [showAtomicNumbers, setShowAtomicNumbers] = useState(true);
   const { enabledAtoms } = useAtomSelection();
 
   return (
@@ -31,7 +34,7 @@ export function SoloPlayScreen() {
               onHold={() => gameRef.current?.holdCurrent()}
               onSwapNext={() => gameRef.current?.swapWithNext()}
             />
-            <PhysicsChemPuzzle key={enabledAtoms.join("-")} ref={gameRef} enabledAtoms={enabledAtoms} onSnapshot={setGame} />
+            <PhysicsChemPuzzle key={enabledAtoms.join("-")} ref={gameRef} enabledAtoms={enabledAtoms} showMoleculeHints={showMoleculeHints} showAtomicNumbers={showAtomicNumbers} onSnapshot={setGame} />
             <div className="mt-3 grid gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-600 shadow-lg shadow-slate-200/60 sm:grid-cols-3">
               <p className="font-black uppercase text-slate-500">Controls</p>
               <p>マウス移動 投下位置</p>
@@ -40,15 +43,16 @@ export function SoloPlayScreen() {
               <p>C ホールド</p>
               <p>X Next交換</p>
             </div>
+            <GameDisplaySettings showMoleculeHints={showMoleculeHints} showAtomicNumbers={showAtomicNumbers} onToggleMoleculeHints={setShowMoleculeHints} onToggleAtomicNumbers={setShowAtomicNumbers} />
             <div className="mt-4">
               <MoleculeGrowthList enabledAtoms={enabledAtoms} />
             </div>
           </div>
         </div>
 
-        <aside className="flex min-h-0 flex-col gap-4">
+        <aside className="flex min-h-0 flex-col gap-4 xl:min-h-[846px]">
           <GameStatusPanel score={game.score} level={game.level} reactionLog={game.reactionLog} comboNotice={game.comboNotice} maxCombo={game.maxCombo} />
-          <FormedMoleculesHistory reactionLog={game.reactionLog} />
+          <FormedMoleculesHistory reactionLog={game.reactionLog} className="flex-1" />
         </aside>
       </section>
 

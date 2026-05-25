@@ -155,9 +155,9 @@ export function MoleculeGrowthList({ enabledAtoms }: { enabledAtoms: TokenSymbol
   );
 }
 
-export function FormedMoleculesHistory({ reactionLog }: { reactionLog: ReactionLog[] }) {
+export function FormedMoleculesHistory({ reactionLog, className = "" }: { reactionLog: ReactionLog[]; className?: string }) {
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/70">
+    <section className={`rounded-lg border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/70 ${className}`}>
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-sm font-black text-slate-950">Formed Molecules</h2>
         <span className="text-xs font-semibold text-slate-500">{reactionLog.length} reactions</span>

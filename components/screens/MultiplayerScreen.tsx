@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { GameDisplaySettings } from "@/components/game/GameDisplaySettings";
 import { GameHud } from "@/components/game/GameHud";
 import { INITIAL_PHYSICS_GAME_SNAPSHOT, PhysicsChemPuzzle, type PhysicsGameHandle } from "@/components/game/PhysicsChemPuzzle";
 import { FormedMoleculesHistory, GameStatusPanel, MoleculeGrowthList } from "@/components/game/ReactionHistory";
@@ -22,6 +23,8 @@ export function MultiplayerScreen() {
   const gameRef = useRef<PhysicsGameHandle | null>(null);
   const [game, setGame] = useState(INITIAL_PHYSICS_GAME_SNAPSHOT);
   const { enabledAtoms } = useAtomSelection();
+  const [showMoleculeHints, setShowMoleculeHints] = useState(true);
+  const [showAtomicNumbers, setShowAtomicNumbers] = useState(true);
   const [password, setPassword] = useState("");
   const [joined, setJoined] = useState(false);
   const [passwordError, setPasswordError] = useState("");
@@ -111,15 +114,16 @@ export function MultiplayerScreen() {
             onHold={() => gameRef.current?.holdCurrent()}
             onSwapNext={() => gameRef.current?.swapWithNext()}
           />
-          <PhysicsChemPuzzle key={enabledAtoms.join("-")} ref={gameRef} enabledAtoms={enabledAtoms} onSnapshot={setGame} />
+          <PhysicsChemPuzzle key={enabledAtoms.join("-")} ref={gameRef} enabledAtoms={enabledAtoms} showMoleculeHints={showMoleculeHints} showAtomicNumbers={showAtomicNumbers} onSnapshot={setGame} />
+          <GameDisplaySettings showMoleculeHints={showMoleculeHints} showAtomicNumbers={showAtomicNumbers} onToggleMoleculeHints={setShowMoleculeHints} onToggleAtomicNumbers={setShowAtomicNumbers} />
           <div className="mt-4">
             <MoleculeGrowthList enabledAtoms={enabledAtoms} />
           </div>
         </BoardColumn>
 
-        <aside className="flex min-h-0 flex-col gap-4">
+        <aside className="flex min-h-0 flex-col gap-4 xl:min-h-[846px]">
           <GameStatusPanel score={game.score} level={game.level} reactionLog={game.reactionLog} comboNotice={game.comboNotice} maxCombo={game.maxCombo} />
-          <FormedMoleculesHistory reactionLog={game.reactionLog} />
+          <FormedMoleculesHistory reactionLog={game.reactionLog} className="flex-1" />
         </aside>
 
         <BoardColumn title="Opponent" subtitle="相手の盤面プレビュー">
