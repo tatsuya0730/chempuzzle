@@ -78,7 +78,7 @@ export default function TutorialPage() {
         <div className="flex flex-col gap-2 border-b border-slate-200 pb-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 className="text-lg font-black text-slate-950">操作方法</h2>
-            <p className="mt-1 text-sm font-semibold text-slate-500">盤面を見ながら、よく使う操作だけを手元のキーに集めています。</p>
+            <p className="mt-1 text-sm font-semibold text-slate-500">盤面上のマウス位置で投下場所を決め、クリックで原子を自由落下させます。</p>
           </div>
           <div className="flex gap-1">
             <MiniToken token="H" />
@@ -87,10 +87,10 @@ export default function TutorialPage() {
           </div>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <KeyCap label="← / A" body="左へ移動" />
-          <KeyCap label="→ / D" body="右へ移動" />
-          <KeyCap label="Space" body="落下" />
-          <KeyCap label="Enter" body="落下 / 開始" />
+          <KeyCap label="Mouse" body="投下位置を調整" />
+          <KeyCap label="Click" body="自由落下" />
+          <KeyCap label="← / →" body="微調整" />
+          <KeyCap label="Space" body="落下 / 開始" />
           <KeyCap label="C" body="ホールド" />
           <KeyCap label="X" body="Next と交換" />
         </div>

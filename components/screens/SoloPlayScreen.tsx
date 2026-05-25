@@ -32,9 +32,9 @@ export function SoloPlayScreen() {
             <PhysicsChemPuzzle key={enabledAtoms.join("-")} ref={gameRef} enabledAtoms={enabledAtoms} onSnapshot={setGame} />
             <div className="mt-3 grid gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-600 shadow-lg shadow-slate-200/60 sm:grid-cols-3">
               <p className="font-black uppercase text-slate-500">Controls</p>
-              <p>← / A 左へ移動</p>
-              <p>→ / D 右へ移動</p>
-              <p>Space / Enter 落下</p>
+              <p>マウス移動 投下位置</p>
+              <p>クリック 落下</p>
+              <p>← / → 微調整</p>
               <p>C ホールド</p>
               <p>X Next交換</p>
             </div>

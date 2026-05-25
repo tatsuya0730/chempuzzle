@@ -171,7 +171,7 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
         nextQueue: TokenSymbol[] = getInitialQueue(activeAtoms);
         currentId: number | null = null;
         tokenActionUsed = false;
-        releaseTimer: number | null = null;
+        releaseTimer: Phaser.Time.TimerEvent | null = null;
         reactionLog: ReactionLog[] = [];
         comboNotice: ComboNotice | null = null;
         logId = 0;
@@ -195,6 +195,11 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
           this.input.keyboard?.on("keydown-ENTER", () => this.startAndDrop());
           this.input.keyboard?.on("keydown-C", () => this.holdCurrent());
           this.input.keyboard?.on("keydown-X", () => this.swapWithNext());
+          this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => this.moveCurrentTo(pointer.x));
+          this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+            this.moveCurrentTo(pointer.x);
+            this.startAndDrop();
+          });
           this.matter.world.on("collisionstart", (event: CollisionEvent) => this.handleCollision(event));
           sceneRef.current = this;
           this.spawnSpecific(getInitialToken(this.enabledAtoms), this.dropX, DROP_Y, true);
@@ -259,6 +264,8 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
           this.reactionLog = [];
           this.comboNotice = null;
           this.combining.clear();
+          this.releaseTimer?.remove(false);
+          this.releaseTimer = null;
           this.spawnSpecific(getWeightedToken(1, this.enabledAtoms), this.dropX, DROP_Y, true);
           this.matter.world.resume();
           this.emitSnapshot();
@@ -318,21 +325,27 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
           return id;
         }
 
-        releaseCurrent(delay = 360) {
+        releaseCurrent() {
           if (this.currentId === null || this.releaseTimer !== null) return;
+          const releasedId = this.currentId;
           this.currentId = null;
-          this.releaseTimer = window.setTimeout(() => {
-            this.releaseTimer = null;
-            if (this.running) this.spawnNext();
-          }, delay);
+          this.queueNextWhenDropZoneClears(releasedId);
           this.emitSnapshot();
         }
 
         nudgeCurrent(direction: -1 | 1) {
-          if (!this.running || this.gameOver || this.currentId === null) return;
+          if (this.gameOver || this.currentId === null) return;
           const entity = this.entities.get(this.currentId);
           if (!entity) return;
-          this.dropX = Math.max(LEFT_WALL + 38, Math.min(RIGHT_WALL - 38, entity.body.x + direction * 24));
+          this.moveCurrentTo(entity.body.x + direction * 24);
+        }
+
+        moveCurrentTo(x: number) {
+          if (this.gameOver || this.currentId === null) return;
+          const entity = this.entities.get(this.currentId);
+          if (!entity) return;
+          const margin = Math.max(38, entity.radius + 8);
+          this.dropX = Math.max(LEFT_WALL + margin, Math.min(RIGHT_WALL - margin, x));
           entity.body.setPosition(this.dropX, DROP_Y);
         }
 
@@ -340,10 +353,32 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
           if (!this.running || this.gameOver || this.currentId === null) return;
           const entity = this.entities.get(this.currentId);
           if (!entity) return;
+          entity.bornAt = this.time.now;
           entity.body.setIgnoreGravity(false);
           entity.body.setStatic(false);
-          entity.body.setVelocity(0, 18);
-          this.releaseCurrent(360);
+          entity.body.setVelocity(0, 0);
+          entity.body.setAngularVelocity(0);
+          this.releaseCurrent();
+        }
+
+        queueNextWhenDropZoneClears(releasedId: number) {
+          const startedAt = this.time.now;
+          const waitForClear = () => {
+            if (this.gameOver) {
+              this.releaseTimer = null;
+              return;
+            }
+            const released = this.entities.get(releasedId);
+            const clearedDropZone = !released || released.body.y > DROP_Y + released.radius * 2 + 24;
+            const waitedLongEnough = this.time.now - startedAt > 900;
+            if (clearedDropZone || waitedLongEnough) {
+              this.releaseTimer = null;
+              this.spawnNext();
+              return;
+            }
+            this.releaseTimer = this.time.delayedCall(80, waitForClear);
+          };
+          this.releaseTimer = this.time.delayedCall(120, waitForClear);
         }
 
         startAndDrop() {
