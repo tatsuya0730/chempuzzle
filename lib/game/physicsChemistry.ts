@@ -115,6 +115,15 @@ export const createAtomEntity = (token: TokenSymbol): Omit<PhysicsEntity, "id"> 
 });
 
 export const resolvePhysicsReaction = (first: PhysicsEntity, second: PhysicsEntity): PhysicsReaction | null => {
+  if (first.atoms.includes("Fire") || second.atoms.includes("Fire")) {
+    return {
+      type: "burst",
+      points: 120,
+      formulas: ["Fire"],
+      effect: "energy",
+    };
+  }
+
   const atoms = [...first.atoms, ...second.atoms];
   if (atoms.length > 8) return null;
 

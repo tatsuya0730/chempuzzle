@@ -114,13 +114,13 @@ export function MultiplayerScreen() {
           />
           <PhysicsChemPuzzle key={enabledAtoms.join("-")} ref={gameRef} enabledAtoms={enabledAtoms} onSnapshot={setGame} />
           <div className="mt-4">
-            <FormedMoleculesHistory reactionLog={game.reactionLog} />
+            <MoleculeGrowthList enabledAtoms={enabledAtoms} />
           </div>
         </BoardColumn>
 
         <aside className="flex min-h-0 flex-col gap-4">
           <GameStatusPanel score={game.score} level={game.level} reactionLog={game.reactionLog} comboNotice={game.comboNotice} />
-          <MoleculeGrowthList enabledAtoms={enabledAtoms} />
+          <FormedMoleculesHistory reactionLog={game.reactionLog} />
         </aside>
 
         <BoardColumn title="Opponent" subtitle="相手の盤面プレビュー">

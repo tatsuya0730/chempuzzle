@@ -27,8 +27,9 @@ export const getWeightedToken = (level: number, enabledAtoms: TokenSymbol[] = DE
     ["Ar", 0.5 + level * 0.03],
     ["K", level >= 5 ? 1.4 + Math.floor(level / 6) : 0.35],
     ["Ca", level >= 5 ? 1.3 + Math.floor(level / 7) : 0.25],
+    ["Fire", level >= 2 ? 1.1 + level * 0.03 : 0.35],
   ];
-  const base = weights.filter(([token]) => enabled.has(token));
+  const base = weights.filter(([token]) => token === "Fire" || enabled.has(token));
   const total = base.reduce((sum, [, weight]) => sum + weight, 0);
   let pick = Math.random() * total;
   for (const [token, weight] of base) {

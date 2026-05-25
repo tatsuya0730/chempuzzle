@@ -2,7 +2,7 @@
 
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import type { ComboNotice, ReactionLog, ResultSummary, TokenSymbol } from "@/types/game";
-import { CLEAR_DELAY, INITIAL_CURRENT, INITIAL_QUEUE, MAX_LOG } from "@/lib/game/config";
+import { INITIAL_CURRENT, INITIAL_QUEUE, MAX_LOG } from "@/lib/game/config";
 import { DEFAULT_GAME_ATOMS } from "@/lib/game/periodic";
 import { getWeightedToken } from "@/lib/game/scoring";
 import { EFFECT_STYLES, TOKENS } from "@/lib/game/tokens";
@@ -30,8 +30,8 @@ export type PhysicsGameHandle = {
 
 const WIDTH = 560;
 const HEIGHT = 640;
-const LEFT_WALL = 44;
-const RIGHT_WALL = WIDTH - 44;
+const LEFT_WALL = 12;
+const RIGHT_WALL = WIDTH - 12;
 const DROP_Y = 62;
 
 type PhaserModule = typeof import("phaser");
@@ -105,7 +105,14 @@ function createTexture(scene: Phaser.Scene, PhaserRuntime: PhaserModule, key: st
   const graphics = scene.add.graphics();
   graphics.fillStyle(color.fill, 1);
   graphics.lineStyle(entity.kind === "atom" ? 2 : 3, entity.kind === "fragment" ? 0xfacc15 : color.stroke, 0.92);
-  if (entity.formula === "Ph") {
+  if (entity.formula === "Fire") {
+    graphics.fillCircle(center, center, entity.radius);
+    graphics.strokeCircle(center, center, entity.radius);
+    graphics.fillStyle(0xffedd5, 0.96);
+    graphics.fillTriangle(center, center - entity.radius * 0.72, center - entity.radius * 0.48, center + entity.radius * 0.42, center + entity.radius * 0.44, center + entity.radius * 0.42);
+    graphics.fillStyle(0xfacc15, 0.92);
+    graphics.fillTriangle(center, center - entity.radius * 0.26, center - entity.radius * 0.25, center + entity.radius * 0.42, center + entity.radius * 0.25, center + entity.radius * 0.42);
+  } else if (entity.formula === "Ph") {
     const points = [];
     for (let index = 0; index < 6; index += 1) {
       const angle = -Math.PI / 2 + (Math.PI * 2 * index) / 6;
@@ -180,7 +187,7 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
         dropX = WIDTH / 2;
 
         create() {
-          this.matter.world.setBounds(LEFT_WALL, 0, RIGHT_WALL - LEFT_WALL, HEIGHT, 42, true, true, false, true);
+          this.matter.world.setBounds(0, 0, WIDTH, HEIGHT, 24, true, true, false, true);
           this.matter.world.drawDebug = false;
           this.matter.world.debugGraphic?.clear();
           this.matter.world.setGravity(0, 1.05);
@@ -306,7 +313,7 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
           body.setFrictionAir(0.006);
           body.setBounce(0.16);
           body.setData("entityId", id);
-          const label = this.add.text(x, y, entity.formula === "Ph" ? "" : entity.formula, {
+          const label = this.add.text(x, y, entity.formula === "Ph" || entity.formula === "Fire" ? "" : entity.formula, {
             fontFamily: "Arial, Helvetica, sans-serif",
             fontSize: `${Math.max(11, Math.min(19, entity.radius * 0.54))}px`,
             fontStyle: "900",
@@ -481,10 +488,6 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
             this.score += reaction.points;
             this.flash(x, y, 0xfb923c);
             this.comboNotice = { id: ++this.comboId, chain: 1, matchCount: 1, bonusPoints: 0, gainedPoints: reaction.points, formulas: reaction.formulas };
-            this.time.delayedCall(CLEAR_DELAY + 520, () => {
-              this.comboNotice = null;
-              this.emitSnapshot();
-            });
             this.emitSnapshot();
             return;
           }
@@ -508,10 +511,6 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
           ].slice(0, MAX_LOG);
           this.comboNotice = { id: ++this.comboId, chain: 1, matchCount: 1, bonusPoints: 0, gainedPoints: reaction.points, formulas: reaction.formulas };
           this.flash(x, y, Number(`0x${EFFECT_STYLES[molecule.effect].stroke.slice(1)}`));
-          this.time.delayedCall(CLEAR_DELAY + 520, () => {
-            this.comboNotice = null;
-            this.emitSnapshot();
-          });
           this.emitSnapshot();
         }
 
@@ -583,7 +582,7 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
   }, [activeAtoms]);
 
   return (
-    <div className="beaker-frame physics-beaker flex w-full items-center justify-center overflow-hidden p-3">
+    <div className="beaker-frame physics-beaker flex w-full items-center justify-center overflow-hidden p-0">
       <div ref={hostRef} className="h-[640px] w-full max-w-[560px]" />
     </div>
   );

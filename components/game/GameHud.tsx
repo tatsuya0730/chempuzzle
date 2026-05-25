@@ -20,8 +20,8 @@ export function GameHud({
   const phPosition = Math.max(0, Math.min(100, (averagePh / 14) * 100));
 
   return (
-    <div className="mb-2 grid gap-2 rounded-lg border border-slate-200 bg-white p-2 shadow-lg shadow-slate-200/70 sm:grid-cols-2">
-      <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+    <div className="mb-2 grid gap-2 rounded-lg border border-slate-200 bg-white p-2 shadow-lg shadow-slate-200/70 md:grid-cols-[92px_148px_minmax(0,1fr)]">
+      <div className="min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs font-bold uppercase text-slate-500">Hold</p>
           <button
@@ -37,7 +37,7 @@ export function GameHud({
           {holdToken ? <MiniToken token={holdToken} /> : <span className="text-xs font-bold text-slate-400">empty</span>}
         </div>
       </div>
-      <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+      <div className="min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs font-bold uppercase text-slate-500">Next</p>
           <button
@@ -61,7 +61,7 @@ export function GameHud({
           })}
         </div>
       </div>
-      <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 sm:col-span-2">
+      <div className="min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
         <div className="flex items-end justify-between">
           <p className="text-xs font-bold uppercase text-slate-500">pH</p>
           <p className="text-base font-black tabular-nums text-slate-950">{averagePh.toFixed(1)}</p>

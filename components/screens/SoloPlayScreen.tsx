@@ -39,14 +39,14 @@ export function SoloPlayScreen() {
               <p>X Next交換</p>
             </div>
             <div className="mt-4">
-              <FormedMoleculesHistory reactionLog={game.reactionLog} />
+              <MoleculeGrowthList enabledAtoms={enabledAtoms} />
             </div>
           </div>
         </div>
 
         <aside className="flex min-h-0 flex-col gap-4">
           <GameStatusPanel score={game.score} level={game.level} reactionLog={game.reactionLog} comboNotice={game.comboNotice} />
-          <MoleculeGrowthList enabledAtoms={enabledAtoms} />
+          <FormedMoleculesHistory reactionLog={game.reactionLog} />
         </aside>
       </section>
 
