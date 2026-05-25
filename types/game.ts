@@ -125,6 +125,7 @@ export type ResultSummary = {
 export type RankingEntry = {
   rank: number;
   name: string;
+  username: string;
   score: number;
   molecule: string;
 };

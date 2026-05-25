@@ -79,8 +79,10 @@ const createFireBurst = (grid: Grid, position: Position): Match | null => {
     const cell = grid[neighbor.row][neighbor.col];
     return cell !== null && (COMBUSTIBILITY[cell.token] ?? 0) > 0;
   });
+  const adjacentOxygens = adjacent.filter((neighbor) => grid[neighbor.row][neighbor.col]?.token === "O");
+  const oxygenBoost = adjacentOxygens.length;
 
-  if (adjacentCombustibles.length === 0) {
+  if (adjacentCombustibles.length === 0 && oxygenBoost === 0) {
     return {
       molecule: {
         formula: "Fire",
@@ -105,15 +107,19 @@ const createFireBurst = (grid: Grid, position: Position): Match | null => {
     const cell = grid[neighbor.row][neighbor.col];
     return Math.max(power, cell ? COMBUSTIBILITY[cell.token] ?? 0 : 0);
   }, 1);
-  const range = maxPower >= 3 ? 2 : 1;
+  const boostedPower = maxPower + Math.min(2, oxygenBoost);
+  const range = boostedPower >= 3 ? 2 : 1;
+  const oxygenKeys = new Set(adjacentOxygens.map(positionKey));
   const burstPositions = getPositionsInRange(position, range).filter((target) => {
     const cell = grid[target.row][target.col];
     if (!cell) return false;
     if (cell.token === "Fire") return true;
+    if (oxygenKeys.has(positionKey(target))) return true;
     const combustibility = COMBUSTIBILITY[cell.token] ?? 0;
     if (combustibility > 0) return true;
-    return maxPower >= 3 && cell.token !== "He" && cell.token !== "Ne" && cell.token !== "Ar";
+    return boostedPower >= 3 && cell.token !== "He" && cell.token !== "Ne" && cell.token !== "Ar";
   });
+  const pointBoost = oxygenBoost * 60;
 
   return {
     molecule: {
@@ -121,17 +127,17 @@ const createFireBurst = (grid: Grid, position: Position): Match | null => {
       name: "炎",
       nodes: ["Fire"],
       bonds: [],
-      property: maxPower >= 3 ? "強燃焼で周囲を巻き込む" : "可燃性原子を発火させる",
+      property: oxygenBoost > 0 ? "酸素で燃焼が増幅する" : boostedPower >= 3 ? "強燃焼で周囲を巻き込む" : "可燃性原子を発火させる",
       effect: "energy",
-      difficulty: 4 + maxPower,
-      points: 120 + burstPositions.length * 40,
+      difficulty: 4 + boostedPower,
+      points: 120 + burstPositions.length * 40 + pointBoost,
       ph: 7,
       acidity: "neutral",
     },
     nodePositions: [position],
     positions: uniqueSortedPositions(burstPositions),
     bonds: [],
-    points: 120 + burstPositions.length * 40,
+    points: 120 + burstPositions.length * 40 + pointBoost,
   };
 };
 

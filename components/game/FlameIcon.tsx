@@ -1,6 +1,6 @@
 export function FlameIcon({ compact = false }: { compact?: boolean }) {
   return (
-    <svg className={compact ? "h-4 w-4" : "h-5 w-5"} viewBox="0 0 24 24" aria-hidden="true">
+    <svg className={compact ? "h-6 w-6" : "h-8 w-8"} viewBox="0 0 24 24" aria-hidden="true">
       <path
         d="M13.6 2.6c.4 3.2-1.7 4.8-3.4 6.4-1.4 1.3-2.5 2.7-2.5 5 0 3 2.1 5.5 5.1 5.5 3.2 0 5.6-2.4 5.6-5.9 0-2.7-1.4-4.8-3.3-6.7-.2 1.5-.9 2.5-1.8 3.2.5-2.3.2-4.8.3-7.5Z"
         fill="currentColor"

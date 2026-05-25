@@ -70,7 +70,7 @@ export default function TutorialPage() {
           <div className="mt-5">
             <HexExample tokens={["C", "S", "Ph", "H", "Fire", "P"]} />
           </div>
-          <p className="mt-8 text-sm font-semibold leading-6 text-orange-900">炎が落ちると周囲の可燃性原子を発火。Ph など燃えやすい片があると範囲が広がります。</p>
+          <p className="mt-8 text-sm font-semibold leading-6 text-orange-900">炎が落ちると周囲の可燃性原子を発火。O が隣にあると燃焼が増幅し、範囲と得点が伸びます。</p>
         </article>
       </section>
 

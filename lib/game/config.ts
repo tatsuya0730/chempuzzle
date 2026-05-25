@@ -20,9 +20,9 @@ export const VALENCE_DIRECTIONS = [0, 1, 5, 2, 4, 3];
 export const ALL_DIRECTIONS = [0, 1, 2, 3, 4, 5] as const;
 
 export const RANKINGS: RankingEntry[] = [
-  { rank: 1, name: "catalyst-k", score: 48240, molecule: "XeF4" },
-  { rank: 2, name: "benzene-runner", score: 41780, molecule: "PhCH3" },
-  { rank: 3, name: "salt-maker", score: 39210, molecule: "ZnCl2" },
-  { rank: 4, name: "orbital-7", score: 35460, molecule: "CO2" },
-  { rank: 5, name: "softdrop-lab", score: 31890, molecule: "H2O2" },
+  { rank: 1, name: "Catalyst K", username: "catalyst_k", score: 48240, molecule: "XeF4" },
+  { rank: 2, name: "Benzene Runner", username: "benzene_runner", score: 41780, molecule: "PhCH3" },
+  { rank: 3, name: "Salt Maker", username: "salt_maker", score: 39210, molecule: "ZnCl2" },
+  { rank: 4, name: "Orbital 7", username: "orbital_7", score: 35460, molecule: "CO2" },
+  { rank: 5, name: "Softdrop Lab", username: "softdrop_lab", score: 31890, molecule: "H2O2" },
 ];

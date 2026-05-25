@@ -1,0 +1,33 @@
+name: Export public schema
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/tbls-public-schema.yml"
+      - "docs/supabase-spec.md"
+
+jobs:
+  tbls:
+    name: tbls public schema
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate database URL
+        run: test -n "$SUPABASE_DB_URL"
+
+      - name: Set up tbls
+        uses: k1LoW/setup-tbls@v1
+
+      - name: Export public schema docs
+        run: tbls doc --dsn "$SUPABASE_DB_URL" --schema public --format markdown --out docs/db/schema
+
+      - name: Upload schema docs
+        uses: actions/upload-artifact@v4
+        with:
+          name: tbls-public-schema
+          path: docs/db/schema

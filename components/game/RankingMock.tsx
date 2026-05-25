@@ -13,9 +13,12 @@ export function RankingMock() {
       </div>
       <div className="mt-3 overflow-hidden rounded-lg border border-slate-200">
         {RANKINGS.map((entry) => (
-          <div key={entry.rank} className="grid grid-cols-[52px_1fr_96px_88px] items-center gap-3 border-b border-slate-100 px-3 py-2 text-sm last:border-b-0">
+          <div key={entry.rank} className="grid grid-cols-[52px_minmax(0,1fr)_96px_88px] items-center gap-3 border-b border-slate-100 px-3 py-2 text-sm last:border-b-0">
             <p className="font-black tabular-nums text-slate-500">#{entry.rank}</p>
-            <p className="font-bold text-slate-900">{entry.name}</p>
+            <div className="min-w-0">
+              <p className="truncate font-bold text-slate-900">{entry.name}</p>
+              <p className="truncate text-xs font-black text-slate-500">@{entry.username}</p>
+            </div>
             <p className="text-right font-black tabular-nums text-slate-950">{formatScore(entry.score)}</p>
             <p className="rounded-md bg-slate-100 px-2 py-1 text-center text-xs font-black text-slate-600">{entry.molecule}</p>
           </div>
