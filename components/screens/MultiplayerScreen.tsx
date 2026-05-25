@@ -6,6 +6,7 @@ import { GameHud } from "@/components/game/GameHud";
 import { INITIAL_PHYSICS_GAME_SNAPSHOT, PhysicsChemPuzzle, type PhysicsGameHandle } from "@/components/game/PhysicsChemPuzzle";
 import { FormedMoleculesHistory, GameStatusPanel, MoleculeGrowthList } from "@/components/game/ReactionHistory";
 import { ResultModal } from "@/components/game/ResultModal";
+import { useGameDisplaySettings } from "@/components/game/useGameDisplaySettings";
 import { useAtomSelection } from "@/components/game/useAtomSelection";
 
 function BoardColumn({ title, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
@@ -23,8 +24,7 @@ export function MultiplayerScreen() {
   const gameRef = useRef<PhysicsGameHandle | null>(null);
   const [game, setGame] = useState(INITIAL_PHYSICS_GAME_SNAPSHOT);
   const { enabledAtoms } = useAtomSelection();
-  const [showMoleculeHints, setShowMoleculeHints] = useState(true);
-  const [showAtomicNumbers, setShowAtomicNumbers] = useState(true);
+  const { showMoleculeHints, showAtomicNumbers, setShowMoleculeHints, setShowAtomicNumbers } = useGameDisplaySettings();
   const [password, setPassword] = useState("");
   const [joined, setJoined] = useState(false);
   const [passwordError, setPasswordError] = useState("");
@@ -121,7 +121,7 @@ export function MultiplayerScreen() {
           </div>
         </BoardColumn>
 
-        <aside className="flex min-h-0 flex-col gap-4 xl:min-h-[846px]">
+        <aside className="flex min-h-0 flex-col gap-4 xl:h-[790px]">
           <GameStatusPanel score={game.score} level={game.level} reactionLog={game.reactionLog} comboNotice={game.comboNotice} maxCombo={game.maxCombo} />
           <FormedMoleculesHistory reactionLog={game.reactionLog} className="flex-1" />
         </aside>

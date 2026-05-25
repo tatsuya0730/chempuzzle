@@ -5,7 +5,7 @@ import type { ComboNotice, EffectKind, Molecule, ReactionLog } from "@/types/gam
 import type { TokenSymbol } from "@/types/game";
 import { MOLECULES } from "@/lib/game/molecules";
 import { formatScore } from "@/lib/game/scoring";
-import { EFFECT_STYLES } from "@/lib/game/tokens";
+import { EFFECT_STYLES, TOKENS } from "@/lib/game/tokens";
 import { MiniToken } from "./MiniToken";
 
 const EFFECT_ORDER: EffectKind[] = ["clean", "toxic", "sleep", "energy", "reactive", "salt", "inert"];
@@ -44,11 +44,11 @@ const getRecipeLayout = (molecule: Molecule) => {
   });
 };
 
-function RecipeDiagram({ molecule }: { molecule: Molecule }) {
+function RecipeDiagram({ molecule, compact = false }: { molecule: Molecule; compact?: boolean }) {
   const positions = getRecipeLayout(molecule);
 
   return (
-    <div className="relative h-24 w-full overflow-hidden rounded-md border border-slate-200 bg-white">
+    <div className={`relative w-full overflow-hidden rounded-md border border-slate-200 bg-white ${compact ? "h-16" : "h-24"}`}>
       <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" aria-hidden="true">
         {molecule.bonds.map((bond, index) => {
           const start = positions[bond.a];
@@ -128,8 +128,15 @@ export function GameStatusPanel({ score, level, reactionLog, maxCombo }: { score
 }
 
 export function MoleculeGrowthList({ enabledAtoms }: { enabledAtoms: TokenSymbol[] }) {
+  const [openAtom, setOpenAtom] = useState<TokenSymbol | null>(enabledAtoms[0] ?? "H");
   const enabled = new Set(enabledAtoms);
-  const molecules = MOLECULES.filter((molecule) => molecule.nodes.every((atom) => enabled.has(atom))).toSorted((a, b) => a.nodes.length - b.nodes.length || a.points - b.points).slice(0, 14);
+  const molecules = MOLECULES.filter((molecule) => molecule.nodes.every((atom) => enabled.has(atom))).toSorted((a, b) => a.nodes.length - b.nodes.length || a.points - b.points);
+  const atomGroups = enabledAtoms
+    .map((atom) => ({
+      atom,
+      molecules: molecules.filter((molecule) => molecule.nodes.includes(atom)).slice(0, 4),
+    }))
+    .filter((group) => group.molecules.length > 0);
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/70">
@@ -137,17 +144,35 @@ export function MoleculeGrowthList({ enabledAtoms }: { enabledAtoms: TokenSymbol
         <h2 className="text-sm font-black text-slate-950">Growth List</h2>
         <span className="text-xs font-semibold text-slate-500">{molecules.length} recipes</span>
       </div>
-      <div className="mt-4 grid gap-3">
-        {molecules.map((molecule) => (
-          <div key={molecule.formula} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-black text-slate-950">{molecule.formula}</p>
-                <p className="truncate text-[0.68rem] font-semibold text-slate-500">{molecule.name}</p>
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        {atomGroups.map(({ atom, molecules: atomMolecules }) => (
+          <div key={atom} className="rounded-lg border border-slate-200 bg-slate-50">
+            <button type="button" onClick={() => setOpenAtom((current) => (current === atom ? null : atom))} className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left">
+              <span className="flex min-w-0 items-center gap-2">
+                <MiniToken token={atom} />
+                <span className="min-w-0">
+                  <span className="block text-sm font-black text-slate-950">{atom}</span>
+                  <span className="block truncate text-[0.68rem] font-semibold text-slate-500">{TOKENS[atom].label}</span>
+                </span>
+              </span>
+              <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[0.65rem] font-black text-slate-500">{atomMolecules.length}</span>
+            </button>
+            {openAtom === atom ? (
+              <div className="grid gap-2 border-t border-slate-200 p-2">
+                {atomMolecules.map((molecule) => (
+                  <div key={`${atom}-${molecule.formula}`} className="rounded-md border border-slate-200 bg-white p-2">
+                    <div className="mb-1 flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-xs font-black text-slate-950">{molecule.formula}</p>
+                        <p className="truncate text-[0.64rem] font-semibold text-slate-500">{molecule.name}</p>
+                      </div>
+                      <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[0.6rem] font-black ${EFFECT_STYLES[molecule.effect].panel}`}>{EFFECT_STYLES[molecule.effect].tag}</span>
+                    </div>
+                    <RecipeDiagram molecule={molecule} compact />
+                  </div>
+                ))}
               </div>
-              <span className={`shrink-0 rounded-md px-2 py-1 text-[0.65rem] font-black ${EFFECT_STYLES[molecule.effect].panel}`}>{EFFECT_STYLES[molecule.effect].tag}</span>
-            </div>
-            <RecipeDiagram molecule={molecule} />
+            ) : null}
           </div>
         ))}
       </div>

@@ -8,13 +8,13 @@ import { FormedMoleculesHistory, GameStatusPanel, MoleculeGrowthList } from "@/c
 import { ResultModal } from "@/components/game/ResultModal";
 import { SiteFooter } from "@/components/game/SiteFooter";
 import { SiteHeader } from "@/components/game/SiteHeader";
+import { useGameDisplaySettings } from "@/components/game/useGameDisplaySettings";
 import { useAtomSelection } from "@/components/game/useAtomSelection";
 
 export function SoloPlayScreen() {
   const gameRef = useRef<PhysicsGameHandle | null>(null);
   const [game, setGame] = useState(INITIAL_PHYSICS_GAME_SNAPSHOT);
-  const [showMoleculeHints, setShowMoleculeHints] = useState(true);
-  const [showAtomicNumbers, setShowAtomicNumbers] = useState(true);
+  const { showMoleculeHints, showAtomicNumbers, setShowMoleculeHints, setShowAtomicNumbers } = useGameDisplaySettings();
   const { enabledAtoms } = useAtomSelection();
 
   return (
@@ -50,7 +50,7 @@ export function SoloPlayScreen() {
           </div>
         </div>
 
-        <aside className="flex min-h-0 flex-col gap-4 xl:min-h-[846px]">
+        <aside className="flex min-h-0 flex-col gap-4 xl:h-[790px]">
           <GameStatusPanel score={game.score} level={game.level} reactionLog={game.reactionLog} comboNotice={game.comboNotice} maxCombo={game.maxCombo} />
           <FormedMoleculesHistory reactionLog={game.reactionLog} className="flex-1" />
         </aside>

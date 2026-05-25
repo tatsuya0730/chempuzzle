@@ -1,5 +1,5 @@
-import { MultiplayerScreen } from "@/components/screens/MultiplayerScreen";
+import { redirect } from "next/navigation";
 
 export default function MultiplayerPage() {
-  return <MultiplayerScreen />;
+  redirect("/multiplayer/find");
 }
