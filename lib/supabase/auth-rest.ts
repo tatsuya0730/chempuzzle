@@ -11,14 +11,14 @@ export type AuthPayload = {
 };
 
 export function getSupabaseConfig() {
-  const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-  if (!url || !anonKey) {
+  if (!url || !publishableKey) {
     return { error: "Authentication service is not configured." };
   }
 
-  return { url: url.replace(/\/$/, ""), anonKey };
+  return { url: url.replace(/\/$/, ""), publishableKey };
 }
 
 export async function callSupabaseRest(path: string, init: RequestInit = {}, accessToken?: string) {
@@ -30,8 +30,8 @@ export async function callSupabaseRest(path: string, init: RequestInit = {}, acc
   const response = await fetch(`${config.url}/rest/v1/${path}`, {
     ...init,
     headers: {
-      apikey: config.anonKey,
-      Authorization: `Bearer ${accessToken ?? config.anonKey}`,
+      apikey: config.publishableKey,
+      Authorization: `Bearer ${accessToken ?? config.publishableKey}`,
       "Content-Type": "application/json",
       ...(init.headers ?? {}),
     },
@@ -50,8 +50,8 @@ export async function callSupabaseAuth(path: string, body: AuthPayload) {
   const response = await fetch(`${config.url}/auth/v1/${path}`, {
     method: "POST",
     headers: {
-      apikey: config.anonKey,
-      Authorization: `Bearer ${config.anonKey}`,
+      apikey: config.publishableKey,
+      Authorization: `Bearer ${config.publishableKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),

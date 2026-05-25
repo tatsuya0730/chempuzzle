@@ -9,7 +9,7 @@ async function getCurrentUser(accessToken: string) {
 
   const response = await fetch(`${config.url}/auth/v1/user`, {
     headers: {
-      apikey: config.anonKey,
+      apikey: config.publishableKey,
       Authorization: `Bearer ${accessToken}`,
     },
   });

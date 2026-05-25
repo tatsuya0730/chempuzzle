@@ -4,21 +4,19 @@ Last reviewed: 2026-05-25
 
 ## Environment Variables
 
-Server routes read these variables:
-
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
-
-The implementation also accepts the public aliases:
+The project uses these Supabase variables:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SECRET_KEY`
+- `SUPABASE_DATABASE_URL`
 
-For GitHub Actions tbls schema export, set:
+Usage:
 
-- `SUPABASE_DB_URL`
-
-`SUPABASE_DB_URL` should be a Postgres connection string that can read the `public` schema metadata.
+- `NEXT_PUBLIC_SUPABASE_URL`: Supabase project URL.
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: browser-safe publishable key used by Auth and REST calls.
+- `SUPABASE_SECRET_KEY`: server-only secret key for future privileged server routes. Do not expose it to client components.
+- `SUPABASE_DATABASE_URL`: Postgres connection string used by tbls and database tooling.
 
 ## Authentication
 
@@ -296,7 +294,7 @@ The GitHub Actions workflow `.github/workflows/tbls-public-schema.yml` exports t
 Required GitHub secret:
 
 ```text
-SUPABASE_DB_URL=postgresql://...
+SUPABASE_DATABASE_URL=postgresql://...
 ```
 
 The workflow writes generated schema docs to:
