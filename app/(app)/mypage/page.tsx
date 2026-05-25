@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { AtomSelectionPanel } from "@/components/game/AtomSelectionPanel";
+import { useAtomSelection } from "@/components/game/useAtomSelection";
 
 const USERNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
 
@@ -18,6 +20,7 @@ export default function MyPage() {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState(false);
+  const { enabledAtoms, setEnabledAtoms, resetEnabledAtoms } = useAtomSelection();
 
   const usernameValid = username.length === 0 || USERNAME_PATTERN.test(username);
 
@@ -180,6 +183,8 @@ export default function MyPage() {
           </div>
         </article>
       </section>
+
+      <AtomSelectionPanel enabledAtoms={enabledAtoms} onChange={setEnabledAtoms} onReset={resetEnabledAtoms} />
 
       <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/70">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

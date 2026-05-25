@@ -1,32 +1,34 @@
 import type { Match, TokenSymbol } from "@/types/game";
 import { BASE_FALL_INTERVAL } from "./config";
+import { DEFAULT_GAME_ATOMS } from "./periodic";
 
 export const formatScore = (value: number) => value.toLocaleString("ja-JP");
 
-export const getWeightedToken = (level: number): TokenSymbol => {
-  const base: Array<[TokenSymbol, number]> = [
+export const getWeightedToken = (level: number, enabledAtoms: TokenSymbol[] = DEFAULT_GAME_ATOMS): TokenSymbol => {
+  const enabled = new Set(enabledAtoms);
+  const weights: Array<[TokenSymbol, number]> = [
     ["H", 18],
-    ["O", 15],
+    ["He", 0.7],
+    ["Li", 2.5 + level * 0.04],
+    ["Be", 1.4 + level * 0.03],
+    ["B", 4 + Math.floor(level / 4)],
     ["C", 12],
     ["N", 10],
-    ["S", 7],
-    ["F", 7],
-    ["Cl", 6],
-    ["P", 4 + Math.floor(level / 4)],
-    ["B", 4 + Math.floor(level / 4)],
-    ["Ph", level >= 2 ? 4 + Math.floor(level / 5) : 1],
+    ["O", 15],
+    ["F", 6],
+    ["Ne", 0.7],
     ["Na", level >= 3 ? 2 + Math.floor(level / 5) : 0.6],
     ["Mg", level >= 4 ? 1.5 + Math.floor(level / 6) : 0.4],
+    ["Al", level >= 4 ? 1.4 + Math.floor(level / 6) : 0.35],
+    ["Si", level >= 4 ? 2 + Math.floor(level / 6) : 0.5],
+    ["P", 4 + Math.floor(level / 4)],
+    ["S", 7],
+    ["Cl", 6],
+    ["Ar", 0.5 + level * 0.03],
+    ["K", level >= 5 ? 1.4 + Math.floor(level / 6) : 0.35],
     ["Ca", level >= 5 ? 1.3 + Math.floor(level / 7) : 0.25],
-    ["Fe", level >= 6 ? 1.1 + Math.floor(level / 8) : 0.15],
-    ["Cu", level >= 7 ? 1 + Math.floor(level / 8) : 0.1],
-    ["Zn", level >= 8 ? 1 + Math.floor(level / 8) : 0.1],
-    ["He", level >= 6 ? 0.45 + level * 0.08 : 0.05],
-    ["Ne", level >= 7 ? 0.4 + level * 0.07 : 0.04],
-    ["Ar", level >= 8 ? 0.35 + level * 0.06 : 0.03],
-    ["Xe", level >= 9 ? 0.55 + level * 0.08 : 0.04],
-    ["Fire", level >= 2 ? 1.6 + level * 0.08 : 0.6],
   ];
+  const base = weights.filter(([token]) => enabled.has(token));
   const total = base.reduce((sum, [, weight]) => sum + weight, 0);
   let pick = Math.random() * total;
   for (const [token, weight] of base) {

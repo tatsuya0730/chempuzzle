@@ -3,8 +3,9 @@
 import { useRef, useState } from "react";
 import { GameHud } from "@/components/game/GameHud";
 import { INITIAL_PHYSICS_GAME_SNAPSHOT, PhysicsChemPuzzle, type PhysicsGameHandle } from "@/components/game/PhysicsChemPuzzle";
-import { ReactionHistory } from "@/components/game/ReactionHistory";
+import { FormedMoleculesHistory, GameStatusPanel, MoleculeGrowthList } from "@/components/game/ReactionHistory";
 import { ResultModal } from "@/components/game/ResultModal";
+import { useAtomSelection } from "@/components/game/useAtomSelection";
 
 function BoardColumn({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
@@ -21,6 +22,7 @@ function BoardColumn({ title, subtitle, children }: { title: string; subtitle: s
 export function MultiplayerScreen() {
   const gameRef = useRef<PhysicsGameHandle | null>(null);
   const [game, setGame] = useState(INITIAL_PHYSICS_GAME_SNAPSHOT);
+  const { enabledAtoms } = useAtomSelection();
   const [password, setPassword] = useState("");
   const [joined, setJoined] = useState(false);
   const [passwordError, setPasswordError] = useState("");
@@ -69,8 +71,8 @@ export function MultiplayerScreen() {
               <p className="mt-1 text-lg font-black text-slate-950">1v1</p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <p className="text-xs font-black text-slate-500">Gimmick</p>
-              <p className="mt-1 text-lg font-black text-slate-950">Water / Fire</p>
+              <p className="text-xs font-black text-slate-500">Rules</p>
+              <p className="mt-1 text-lg font-black text-slate-950">Physics</p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
               <p className="text-xs font-black text-slate-500">Room</p>
@@ -110,10 +112,16 @@ export function MultiplayerScreen() {
             onHold={() => gameRef.current?.holdCurrent()}
             onSwapNext={() => gameRef.current?.swapWithNext()}
           />
-          <PhysicsChemPuzzle ref={gameRef} onSnapshot={setGame} />
+          <PhysicsChemPuzzle key={enabledAtoms.join("-")} ref={gameRef} enabledAtoms={enabledAtoms} onSnapshot={setGame} />
+          <div className="mt-4">
+            <FormedMoleculesHistory reactionLog={game.reactionLog} />
+          </div>
         </BoardColumn>
 
-        <ReactionHistory reactionLog={game.reactionLog} score={game.score} level={game.level} comboNotice={game.comboNotice} />
+        <aside className="flex min-h-0 flex-col gap-4">
+          <GameStatusPanel score={game.score} level={game.level} reactionLog={game.reactionLog} comboNotice={game.comboNotice} />
+          <MoleculeGrowthList enabledAtoms={enabledAtoms} />
+        </aside>
 
         <BoardColumn title="Opponent" subtitle="相手の盤面プレビュー">
           <div className="mb-3 grid grid-cols-2 gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-lg shadow-slate-200/60">

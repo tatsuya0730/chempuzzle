@@ -3,14 +3,16 @@
 import { useRef, useState } from "react";
 import { GameHud } from "@/components/game/GameHud";
 import { INITIAL_PHYSICS_GAME_SNAPSHOT, PhysicsChemPuzzle, type PhysicsGameHandle } from "@/components/game/PhysicsChemPuzzle";
-import { ReactionHistory } from "@/components/game/ReactionHistory";
+import { FormedMoleculesHistory, GameStatusPanel, MoleculeGrowthList } from "@/components/game/ReactionHistory";
 import { ResultModal } from "@/components/game/ResultModal";
 import { SiteFooter } from "@/components/game/SiteFooter";
 import { SiteHeader } from "@/components/game/SiteHeader";
+import { useAtomSelection } from "@/components/game/useAtomSelection";
 
 export function SoloPlayScreen() {
   const gameRef = useRef<PhysicsGameHandle | null>(null);
   const [game, setGame] = useState(INITIAL_PHYSICS_GAME_SNAPSHOT);
+  const { enabledAtoms } = useAtomSelection();
 
   return (
     <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-4 px-4 py-3 sm:px-6 lg:px-8">
@@ -27,19 +29,25 @@ export function SoloPlayScreen() {
               onHold={() => gameRef.current?.holdCurrent()}
               onSwapNext={() => gameRef.current?.swapWithNext()}
             />
-            <PhysicsChemPuzzle ref={gameRef} onSnapshot={setGame} />
+            <PhysicsChemPuzzle key={enabledAtoms.join("-")} ref={gameRef} enabledAtoms={enabledAtoms} onSnapshot={setGame} />
             <div className="mt-3 grid gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-600 shadow-lg shadow-slate-200/60 sm:grid-cols-3">
               <p className="font-black uppercase text-slate-500">Controls</p>
-              <p>← / A 右左移動</p>
-              <p>↓ / S ソフトドロップ</p>
-              <p>Space 落下固定 / Enter Start</p>
+              <p>← / A 左へ移動</p>
+              <p>→ / D 右へ移動</p>
+              <p>Space / Enter 落下</p>
               <p>C ホールド</p>
               <p>X Next交換</p>
+            </div>
+            <div className="mt-4">
+              <FormedMoleculesHistory reactionLog={game.reactionLog} />
             </div>
           </div>
         </div>
 
-        <ReactionHistory reactionLog={game.reactionLog} score={game.score} level={game.level} comboNotice={game.comboNotice} />
+        <aside className="flex min-h-0 flex-col gap-4">
+          <GameStatusPanel score={game.score} level={game.level} reactionLog={game.reactionLog} comboNotice={game.comboNotice} />
+          <MoleculeGrowthList enabledAtoms={enabledAtoms} />
+        </aside>
       </section>
 
       <SiteFooter />

@@ -33,29 +33,34 @@ export type PhysicsReaction =
 
 const ATOM_RADII: Record<TokenSymbol, number> = {
   H: 15,
-  O: 24,
+  He: 18,
+  Li: 34,
+  Be: 27,
+  B: 27,
   C: 25,
   N: 23,
-  P: 32,
-  B: 27,
+  O: 24,
   F: 21,
-  S: 31,
-  Cl: 30,
+  Ne: 20,
   Na: 34,
   Mg: 33,
+  Al: 32,
+  Si: 30,
+  P: 32,
+  S: 31,
+  Cl: 30,
+  Ar: 28,
+  K: 39,
   Ca: 38,
   Fe: 31,
   Cu: 32,
   Zn: 33,
-  He: 18,
-  Ne: 20,
-  Ar: 28,
   Xe: 34,
   Ph: 38,
   Fire: 24,
 };
 
-const FORMULA_ORDER: TokenSymbol[] = ["Ph", "C", "H", "B", "N", "O", "P", "S", "F", "Cl", "Na", "Mg", "Ca", "Fe", "Cu", "Zn", "He", "Ne", "Ar", "Xe", "Fire"];
+const FORMULA_ORDER: TokenSymbol[] = ["Ph", "C", "H", "B", "N", "O", "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca", "Li", "Be", "Fe", "Cu", "Zn", "He", "Xe", "Fire"];
 
 const atomCounts = (atoms: TokenSymbol[]) => {
   const counts = new Map<TokenSymbol, number>();
@@ -110,14 +115,6 @@ export const createAtomEntity = (token: TokenSymbol): Omit<PhysicsEntity, "id"> 
 });
 
 export const resolvePhysicsReaction = (first: PhysicsEntity, second: PhysicsEntity): PhysicsReaction | null => {
-  if (first.atoms.includes("Fire") || second.atoms.includes("Fire")) {
-    const other = first.atoms.includes("Fire") ? second : first;
-    if (other.atoms.some((atom) => ["H", "C", "S", "P", "Ph", "O"].includes(atom))) {
-      return { type: "burst", points: 180 + other.atoms.length * 42, formulas: ["Fire"], effect: "energy" };
-    }
-    return null;
-  }
-
   const atoms = [...first.atoms, ...second.atoms];
   if (atoms.length > 8) return null;
 

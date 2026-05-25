@@ -1,6 +1,9 @@
 import type { ComboNotice, EffectKind, ReactionLog } from "@/types/game";
+import type { TokenSymbol } from "@/types/game";
+import { MOLECULES } from "@/lib/game/molecules";
 import { formatScore } from "@/lib/game/scoring";
 import { EFFECT_STYLES } from "@/lib/game/tokens";
+import { MiniToken } from "./MiniToken";
 
 const EFFECT_ORDER: EffectKind[] = ["clean", "toxic", "sleep", "energy", "reactive", "salt", "inert"];
 
@@ -25,7 +28,7 @@ function ComboFlash({ combo }: { combo: ComboNotice }) {
   );
 }
 
-function SideStatus({ score, level, reactionLog, comboNotice }: { score: number; level: number; reactionLog: ReactionLog[]; comboNotice: ComboNotice | null }) {
+export function GameStatusPanel({ score, level, reactionLog, comboNotice }: { score: number; level: number; reactionLog: ReactionLog[]; comboNotice: ComboNotice | null }) {
   const total = reactionLog.length;
   const effectCounts = reactionLog.reduce(
     (counts, entry) => {
@@ -91,44 +94,78 @@ function SideStatus({ score, level, reactionLog, comboNotice }: { score: number;
   );
 }
 
+export function MoleculeGrowthList({ enabledAtoms }: { enabledAtoms: TokenSymbol[] }) {
+  const enabled = new Set(enabledAtoms);
+  const molecules = MOLECULES.filter((molecule) => molecule.nodes.every((atom) => enabled.has(atom))).toSorted((a, b) => a.nodes.length - b.nodes.length || a.points - b.points).slice(0, 14);
+
+  return (
+    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/70">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-sm font-black text-slate-950">Growth List</h2>
+        <span className="text-xs font-semibold text-slate-500">{molecules.length} recipes</span>
+      </div>
+      <div className="mt-4 space-y-2">
+        {molecules.map((molecule) => (
+          <div key={molecule.formula} className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+            <div className="min-w-0">
+              <p className="text-sm font-black text-slate-950">{molecule.formula}</p>
+              <p className="truncate text-[0.68rem] font-semibold text-slate-500">{molecule.name}</p>
+            </div>
+            <div className="flex max-w-36 flex-wrap justify-end gap-1">
+              {molecule.nodes.slice(0, 5).map((token, index) => (
+                <span key={`${molecule.formula}-${token}-${index}`} className="scale-75">
+                  <MiniToken token={token} />
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function FormedMoleculesHistory({ reactionLog }: { reactionLog: ReactionLog[] }) {
+  return (
+    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/70">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-sm font-black text-slate-950">Formed Molecules</h2>
+        <span className="text-xs font-semibold text-slate-500">{reactionLog.length} reactions</span>
+      </div>
+
+      {reactionLog.length === 0 ? <div className="mt-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm leading-6 text-slate-500">形成された分子の履歴と特性がここに表示されます。</div> : null}
+
+      <div className="mt-4 grid max-h-72 gap-3 overflow-auto pr-1 md:grid-cols-2">
+        {reactionLog.map((entry) => (
+          <div key={entry.id} className={`rounded-lg border p-3 ${EFFECT_STYLES[entry.effect].panel}`}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-lg font-black">{entry.formula}</p>
+                <p className="text-xs font-semibold opacity-75">
+                  {entry.name} / {entry.count} atoms
+                </p>
+                <p className="mt-1 text-xs font-black opacity-80">
+                  {entry.acidity === "acidic" ? "酸性" : entry.acidity === "basic" ? "塩基性" : "中性"} / pH {entry.ph.toFixed(1)}
+                </p>
+              </div>
+              <p className="text-sm font-black tabular-nums">+{formatScore(entry.points)}</p>
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <p className="text-xs leading-5 opacity-80">{entry.property}</p>
+              <span className="shrink-0 rounded-md bg-white/70 px-2 py-1 text-xs font-black">{EFFECT_STYLES[entry.effect].tag}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function ReactionHistory({ reactionLog, score, level, comboNotice }: { reactionLog: ReactionLog[]; score: number; level: number; comboNotice: ComboNotice | null }) {
   return (
     <aside className="flex min-h-0 flex-col gap-4">
-      <SideStatus score={score} level={level} reactionLog={reactionLog} comboNotice={comboNotice} />
-
-      <section className="min-h-0 rounded-lg border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/70">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm font-black text-slate-950">Formed Molecules</h2>
-          <span className="text-xs font-semibold text-slate-500">{reactionLog.length} reactions</span>
-        </div>
-
-        {reactionLog.length === 0 ? (
-          <div className="mt-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm leading-6 text-slate-500">形成された分子の履歴と特性がここに表示されます。</div>
-        ) : null}
-
-        <div className="mt-4 max-h-[calc(100vh-470px)] space-y-3 overflow-auto pr-1">
-          {reactionLog.map((entry) => (
-            <div key={entry.id} className={`rounded-lg border p-3 ${EFFECT_STYLES[entry.effect].panel}`}>
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-lg font-black">{entry.formula}</p>
-                  <p className="text-xs font-semibold opacity-75">
-                    {entry.name} / {entry.count} tiles
-                  </p>
-                  <p className="mt-1 text-xs font-black opacity-80">
-                    {entry.acidity === "acidic" ? "酸性" : entry.acidity === "basic" ? "塩基性" : "中性"} / pH {entry.ph.toFixed(1)}
-                  </p>
-                </div>
-                <p className="text-sm font-black tabular-nums">+{formatScore(entry.points)}</p>
-              </div>
-              <div className="mt-3 flex items-center justify-between gap-2">
-                <p className="text-xs leading-5 opacity-80">{entry.property}</p>
-                <span className="shrink-0 rounded-md bg-white/70 px-2 py-1 text-xs font-black">{EFFECT_STYLES[entry.effect].tag}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      <GameStatusPanel score={score} level={level} reactionLog={reactionLog} comboNotice={comboNotice} />
+      <FormedMoleculesHistory reactionLog={reactionLog} />
     </aside>
   );
 }

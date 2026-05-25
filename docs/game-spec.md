@@ -32,26 +32,20 @@ The `(app)` route group is used because the grouped routes share an authenticate
 
 Available token symbols:
 
-- Nonmetals: `H`, `O`, `C`, `N`, `P`, `B`, `S`
-- Halogens: `F`, `Cl`
-- Metals: `Na`, `Mg`, `Ca`, `Fe`, `Cu`, `Zn`
-- Noble gases: `He`, `Ne`, `Ar`, `Xe`
-- Group token: `Ph`
-- Gimmick token: `Fire`
-
-`Ph` renders as a benzene ring icon. `Fire` renders as a flame icon and has no valence.
+- Default atoms: `H`, `He`, `Li`, `Be`, `B`, `C`, `N`, `O`, `F`, `Ne`, `Na`, `Mg`, `Al`, `Si`, `P`, `S`, `Cl`, `Ar`, `K`, `Ca`
+- The selectable atom set lives in My Page as a local periodic-table setting.
+- Legacy special tokens remain in old shared components, but they are not part of the default physics game pool.
 
 ## Controls
 
 - `ArrowLeft` / `A`: move left
 - `ArrowRight` / `D`: move right
-- `ArrowDown` / `S`: soft drop
-- `Space`: lock/drop the current token faster
-- `Enter`: start / stop / restart
+- `Space`: drop the aimed token
+- `Enter`: start when stopped, otherwise drop the aimed token
 - `C`: hold current token
 - `X`: swap current token with the next token
 
-Hold and next-swap can be used once per falling token.
+The active atom waits at the top of the beaker until the player drops it, Suika-game style. Hold and next-swap can be used once before dropping the active token.
 
 ## Queue and HUD
 
@@ -59,14 +53,15 @@ Hold and next-swap can be used once per falling token.
 - Hold displays the held token or empty state.
 - Next displays the upcoming queue with opacity and scale decreasing for later tokens.
 - pH is calculated from the average pH of recent reaction history and shown on a 0-14 bar.
-- Score, level, combo, attribute summary, and formed molecule history are shown in the right pane.
+- Score, level, combo, attribute summary, and molecule growth list are shown in the right pane.
+- Formed molecule history is shown below the board.
 
 ## Falling and Progression
 
 - Initial current token: `H`
 - Initial queue: `O`, `C`, `N`
-- New tokens are drawn by weighted random selection.
-- Higher levels increase the chance of advanced atoms such as metals, noble gases, `Ph`, and `Fire`.
+- New tokens are drawn by weighted random selection from the selected atom pool.
+- The default selected atom pool is limited to atomic numbers 1-20.
 - Matter Physics controls falling, bounce, friction, and settling.
 - Level increases when terminal molecules clear.
 - Game over occurs when settled bodies block the top of the beaker.
@@ -87,25 +82,12 @@ Base molecule points come from each molecule definition, then receive:
 
 - node count bonus
 - difficulty bonus
-- multi-match combo bonus
-- water dissolve bonus
-- fire burst bonus
-- oxygen-boost bonus for fire
 
 Combo and chain notices show gained points, match count, chain depth, and bonus points.
 
-## Water Gimmick
+## Molecule Pool
 
-When `H2O` reaches its terminal composition, it clears and scores as a stable molecule. The old grid-adjacent dissolve rule is not used in the physics version.
-
-## Fire Gimmick
-
-`Fire` is a falling token. When it is on the board:
-
-- Collision with fuel-like atoms or oxygen triggers a burst.
-- Bursts clear nearby non-noble-gas bodies and grant bonus points.
-
-Noble gases `He`, `Ne`, and `Ar` resist strong fire burst spillover.
+The physics version intentionally keeps generated molecules limited to common/general-environment compounds such as `H2`, `O2`, `N2`, `H2O`, `CO`, `CO2`, `CH4`, `NH3`, `NaCl`, `KCl`, `MgO`, `CaO`, `SiO2`, and `Al2O3`. Exotic noble-gas compounds, benzene group reactions, transition-metal salts, and ion-only reactions are excluded from the default rule set.
 
 ## Reaction History and Attributes
 

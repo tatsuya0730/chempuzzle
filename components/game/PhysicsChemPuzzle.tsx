@@ -3,6 +3,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import type { ComboNotice, ReactionLog, ResultSummary, TokenSymbol } from "@/types/game";
 import { CLEAR_DELAY, INITIAL_CURRENT, INITIAL_QUEUE, MAX_LOG } from "@/lib/game/config";
+import { DEFAULT_GAME_ATOMS } from "@/lib/game/periodic";
 import { getWeightedToken } from "@/lib/game/scoring";
 import { EFFECT_STYLES, TOKENS } from "@/lib/game/tokens";
 import { createAtomEntity, type PhysicsEntity, type PhysicsReaction, resolvePhysicsReaction } from "@/lib/game/physicsChemistry";
@@ -49,6 +50,8 @@ type CollisionEvent = {
 const TOKEN_COLORS: Record<TokenSymbol, { fill: number; stroke: number; text: string }> = {
   H: { fill: 0xbae6fd, stroke: 0x0284c7, text: "#082f49" },
   O: { fill: 0xfecdd3, stroke: 0xe11d48, text: "#4c0519" },
+  Li: { fill: 0xffe4e6, stroke: 0xfb7185, text: "#4c0519" },
+  Be: { fill: 0xecfccb, stroke: 0x84cc16, text: "#1a2e05" },
   C: { fill: 0x27272a, stroke: 0x71717a, text: "#ffffff" },
   N: { fill: 0xc7d2fe, stroke: 0x4f46e5, text: "#1e1b4b" },
   P: { fill: 0xd9f99d, stroke: 0x65a30d, text: "#1a2e05" },
@@ -58,6 +61,8 @@ const TOKEN_COLORS: Record<TokenSymbol, { fill: number; stroke: number; text: st
   Cl: { fill: 0xbbf7d0, stroke: 0x16a34a, text: "#052e16" },
   Na: { fill: 0xe7e5e4, stroke: 0x78716c, text: "#1c1917" },
   Mg: { fill: 0xe2e8f0, stroke: 0x64748b, text: "#0f172a" },
+  Al: { fill: 0xe4e4e7, stroke: 0x71717a, text: "#18181b" },
+  Si: { fill: 0xcffafe, stroke: 0x0891b2, text: "#083344" },
   Ca: { fill: 0xe5e5e5, stroke: 0x737373, text: "#171717" },
   Fe: { fill: 0xfed7aa, stroke: 0xea580c, text: "#431407" },
   Cu: { fill: 0xfcd34d, stroke: 0xd97706, text: "#451a03" },
@@ -65,6 +70,7 @@ const TOKEN_COLORS: Record<TokenSymbol, { fill: number; stroke: number; text: st
   He: { fill: 0xddd6fe, stroke: 0x7c3aed, text: "#2e1065" },
   Ne: { fill: 0xf5d0fe, stroke: 0xc026d3, text: "#4a044e" },
   Ar: { fill: 0xe9d5ff, stroke: 0x9333ea, text: "#3b0764" },
+  K: { fill: 0xede9fe, stroke: 0x8b5cf6, text: "#2e1065" },
   Xe: { fill: 0x99f6e4, stroke: 0x0d9488, text: "#042f2e" },
   Ph: { fill: 0x164e63, stroke: 0x06b6d4, text: "#ecfeff" },
   Fire: { fill: 0xf97316, stroke: 0xef4444, text: "#fff7ed" },
@@ -98,7 +104,7 @@ function createTexture(scene: Phaser.Scene, PhaserRuntime: PhaserModule, key: st
   const center = size / 2;
   const graphics = scene.add.graphics();
   graphics.fillStyle(color.fill, 1);
-  graphics.lineStyle(entity.kind === "atom" ? 4 : 5, entity.kind === "fragment" ? 0xfacc15 : color.stroke, 1);
+  graphics.lineStyle(entity.kind === "atom" ? 2 : 3, entity.kind === "fragment" ? 0xfacc15 : color.stroke, 0.92);
   if (entity.formula === "Ph") {
     const points = [];
     for (let index = 0; index < 6; index += 1) {
@@ -107,7 +113,7 @@ function createTexture(scene: Phaser.Scene, PhaserRuntime: PhaserModule, key: st
     }
     graphics.fillPoints(points, true);
     graphics.strokePoints(points, true);
-    graphics.lineStyle(3, 0xecfeff, 0.86);
+    graphics.lineStyle(2, 0xecfeff, 0.86);
     graphics.strokeCircle(center, center, entity.radius * 0.48);
   } else {
     graphics.fillCircle(center, center, entity.radius);
@@ -121,7 +127,17 @@ function createTexture(scene: Phaser.Scene, PhaserRuntime: PhaserModule, key: st
   graphics.destroy();
 }
 
-export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { onSnapshot: (snapshot: PhysicsGameSnapshot) => void }>(function PhysicsChemPuzzle({ onSnapshot }, ref) {
+const getInitialToken = (enabledAtoms: TokenSymbol[]) => (enabledAtoms.includes(INITIAL_CURRENT) ? INITIAL_CURRENT : enabledAtoms[0] ?? "H");
+const getInitialQueue = (enabledAtoms: TokenSymbol[]) => {
+  const queue: TokenSymbol[] = [];
+  for (const token of [...INITIAL_QUEUE, ...enabledAtoms]) {
+    if (!queue.includes(token)) queue.push(token);
+    if (queue.length === 3) break;
+  }
+  return queue;
+};
+
+export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: TokenSymbol[]; onSnapshot: (snapshot: PhysicsGameSnapshot) => void }>(function PhysicsChemPuzzle({ enabledAtoms: activeAtoms = DEFAULT_GAME_ATOMS, onSnapshot }, ref) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const sceneRef = useRef<PhysicsGameHandle | null>(null);
   const snapshotRef = useRef(onSnapshot);
@@ -151,7 +167,8 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { onSnapshot: (sn
         running = false;
         gameOver = false;
         holdToken: TokenSymbol | null = null;
-        nextQueue: TokenSymbol[] = [...INITIAL_QUEUE];
+        enabledAtoms: TokenSymbol[] = activeAtoms;
+        nextQueue: TokenSymbol[] = getInitialQueue(activeAtoms);
         currentId: number | null = null;
         tokenActionUsed = false;
         releaseTimer: number | null = null;
@@ -172,15 +189,15 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { onSnapshot: (sn
           this.input.keyboard?.on("keydown-A", () => this.nudgeCurrent(-1));
           this.input.keyboard?.on("keydown-RIGHT", () => this.nudgeCurrent(1));
           this.input.keyboard?.on("keydown-D", () => this.nudgeCurrent(1));
-          this.input.keyboard?.on("keydown-DOWN", () => this.softDrop());
-          this.input.keyboard?.on("keydown-S", () => this.softDrop());
-          this.input.keyboard?.on("keydown-SPACE", () => this.hardDrop());
-          this.input.keyboard?.on("keydown-ENTER", () => this.toggleRunning());
+          this.input.keyboard?.on("keydown-DOWN", () => this.dropCurrent());
+          this.input.keyboard?.on("keydown-S", () => this.dropCurrent());
+          this.input.keyboard?.on("keydown-SPACE", () => this.dropCurrent());
+          this.input.keyboard?.on("keydown-ENTER", () => (this.running ? this.dropCurrent() : this.toggleRunning()));
           this.input.keyboard?.on("keydown-C", () => this.holdCurrent());
           this.input.keyboard?.on("keydown-X", () => this.swapWithNext());
           this.matter.world.on("collisionstart", (event: CollisionEvent) => this.handleCollision(event));
           sceneRef.current = this;
-          this.spawnSpecific(INITIAL_CURRENT, this.dropX, DROP_Y, true);
+          this.spawnSpecific(getInitialToken(this.enabledAtoms), this.dropX, DROP_Y, true);
           this.matter.world.pause();
           this.emitSnapshot();
         }
@@ -189,14 +206,8 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { onSnapshot: (sn
           const bg = this.add.graphics();
           bg.fillStyle(0xf8fafc, 1);
           bg.fillRect(0, 0, WIDTH, HEIGHT);
-          bg.fillStyle(0xf8fafc, 0.92);
-          bg.fillRect(18, 8, WIDTH - 36, HEIGHT - 18);
-          bg.fillStyle(0xbae6fd, 0.22);
-          bg.fillRect(38, 56, WIDTH - 76, HEIGHT - 104);
-          bg.lineStyle(8, 0x0e7490, 0.42);
-          bg.strokeRect(22, 20, WIDTH - 44, HEIGHT - 32);
-          bg.lineStyle(2, 0xffffff, 0.7);
-          bg.strokeRect(36, 34, WIDTH - 72, HEIGHT - 62);
+          bg.fillStyle(0xe0f2fe, 0.46);
+          bg.fillRect(34, 42, WIDTH - 68, HEIGHT - 86);
           bg.fillStyle(0xffffff, 0.24);
           bg.fillRect(WIDTH - 90, 54, 18, HEIGHT - 150);
         }
@@ -227,13 +238,13 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { onSnapshot: (sn
           this.running = true;
           this.gameOver = false;
           this.holdToken = null;
-          this.nextQueue = [...INITIAL_QUEUE];
+          this.nextQueue = getInitialQueue(this.enabledAtoms);
           this.currentId = null;
           this.tokenActionUsed = false;
           this.reactionLog = [];
           this.comboNotice = null;
           this.combining.clear();
-          this.spawnSpecific(getWeightedToken(1), this.dropX, DROP_Y, true);
+          this.spawnSpecific(getWeightedToken(1, this.enabledAtoms), this.dropX, DROP_Y, true);
           this.matter.world.resume();
           this.emitSnapshot();
         }
@@ -252,7 +263,7 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { onSnapshot: (sn
         spawnNext() {
           if (this.gameOver || this.currentId !== null) return;
           const [token, ...rest] = this.nextQueue;
-          this.nextQueue = [...rest, getWeightedToken(this.level)];
+          this.nextQueue = [...rest, getWeightedToken(this.level, this.enabledAtoms)];
           this.tokenActionUsed = false;
           this.spawnSpecific(token, this.dropX, DROP_Y, true);
           this.emitSnapshot();
@@ -284,7 +295,11 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { onSnapshot: (sn
           label.setDepth(20);
           body.setDepth(10);
           this.entities.set(id, { ...entity, id, body, label, bornAt: this.time.now });
-          if (controlled) this.currentId = id;
+          if (controlled) {
+            body.setStatic(true);
+            body.setIgnoreGravity(true);
+            this.currentId = id;
+          }
           return id;
         }
 
@@ -302,20 +317,18 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { onSnapshot: (sn
           if (!this.running || this.gameOver || this.currentId === null) return;
           const entity = this.entities.get(this.currentId);
           if (!entity) return;
-          entity.body.setVelocityX(direction * 4.4);
-          entity.body.setAngularVelocity(direction * 0.035);
           this.dropX = Math.max(LEFT_WALL + 38, Math.min(RIGHT_WALL - 38, entity.body.x + direction * 24));
+          entity.body.setPosition(this.dropX, DROP_Y);
         }
 
-        softDrop() {
+        dropCurrent() {
           if (!this.running || this.gameOver || this.currentId === null) return;
-          this.entities.get(this.currentId)?.body.setVelocityY(8);
-        }
-
-        hardDrop() {
-          if (!this.running || this.gameOver || this.currentId === null) return;
-          this.entities.get(this.currentId)?.body.setVelocityY(15);
-          this.releaseCurrent(420);
+          const entity = this.entities.get(this.currentId);
+          if (!entity) return;
+          entity.body.setIgnoreGravity(false);
+          entity.body.setStatic(false);
+          entity.body.setVelocityY(2.6);
+          this.releaseCurrent(900);
         }
 
         holdCurrent() {
@@ -327,7 +340,7 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { onSnapshot: (sn
           if (!replacement) return;
           if (this.holdToken === null) {
             const [, ...rest] = this.nextQueue;
-            this.nextQueue = [...rest, getWeightedToken(this.level)];
+            this.nextQueue = [...rest, getWeightedToken(this.level, this.enabledAtoms)];
           }
           this.holdToken = currentToken;
           const { x, y } = current.body;
@@ -470,9 +483,6 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { onSnapshot: (sn
               this.matter.world.pause();
               this.emitSnapshot();
             }
-            if (entity.id === this.currentId && entity.body.y > 150 && Math.abs(velocityY) < 0.55) {
-              this.releaseCurrent();
-            }
           });
         }
       }
@@ -506,7 +516,7 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { onSnapshot: (sn
       if (game) game.destroy(true);
       snapshotRef.current(initialSnapshot);
     };
-  }, []);
+  }, [activeAtoms]);
 
   return (
     <div className="beaker-frame physics-beaker flex w-full items-center justify-center overflow-hidden p-3">

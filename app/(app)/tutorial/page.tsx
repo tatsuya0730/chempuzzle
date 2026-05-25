@@ -66,11 +66,11 @@ export default function TutorialPage() {
         </article>
 
         <article className="rounded-lg border border-orange-200 bg-orange-50 p-5 shadow-xl shadow-orange-100/70">
-          <h2 className="text-lg font-black text-orange-950">3. 炎ボム</h2>
+          <h2 className="text-lg font-black text-orange-950">3. 成長リスト</h2>
           <div className="mt-5">
-            <PhysicsExample tokens={["C", "S", "Ph", "H", "Fire", "P"]} />
+            <PhysicsExample tokens={["H", "H", "O", "O", "C", "O"]} />
           </div>
-          <p className="mt-8 text-sm font-semibold leading-6 text-orange-900">炎が燃料系の原子や O に触れると、周囲の非希ガス系トークンを巻き込むバーストが起きます。</p>
+          <p className="mt-8 text-sm font-semibold leading-6 text-orange-900">右側に生成できる分子の成長リストが出ます。原子選択を変えると候補も変わります。</p>
         </article>
       </section>
 
@@ -83,14 +83,14 @@ export default function TutorialPage() {
           <div className="flex gap-1">
             <MiniToken token="H" />
             <MiniToken token="O" />
-            <MiniToken token="Fire" />
+            <MiniToken token="C" />
           </div>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <KeyCap label="← / A" body="左へ移動" />
           <KeyCap label="→ / D" body="右へ移動" />
-          <KeyCap label="↓ / S" body="ソフトドロップ" />
-          <KeyCap label="Space" body="落下固定" />
+          <KeyCap label="Space" body="落下" />
+          <KeyCap label="Enter" body="落下 / 開始" />
           <KeyCap label="C" body="ホールド" />
           <KeyCap label="X" body="Next と交換" />
         </div>
@@ -102,7 +102,7 @@ export default function TutorialPage() {
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <MoleculeRecipe title="H2O 水" tokens={["H", "O", "H"]} note="最終的に安定した分子として成立すると消える基本反応。" />
             <MoleculeRecipe title="CO2 二酸化炭素" tokens={["O", "C", "O"]} note="CO 中間トークンを経由して作る代表例。" />
-            <MoleculeRecipe title="CH4 メタン" tokens={["C", "H", "H", "H", "H"]} note="可燃性。炎の近くではバーストの起点になる。" />
+            <MoleculeRecipe title="CH4 メタン" tokens={["C", "H", "H", "H", "H"]} note="一般環境で扱いやすい炭化水素の代表。" />
             <MoleculeRecipe title="NaCl 塩" tokens={["Na", "Cl"]} note="無機塩として成立すると消える安定系の分子。" />
           </div>
         </div>
