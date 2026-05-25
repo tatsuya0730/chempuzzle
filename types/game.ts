@@ -80,6 +80,7 @@ export type Molecule = {
   acidity: "acidic" | "neutral" | "basic";
   deferIfExpandableTo?: string;
   imageUrl?: string;
+  fact?: string;
 };
 
 export type ResolvedBond = {
@@ -107,6 +108,7 @@ export type ReactionLog = {
   count: number;
   points: number;
   imageUrl?: string;
+  fact?: string;
 };
 
 export type ComboNotice = {

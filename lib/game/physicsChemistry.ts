@@ -60,7 +60,7 @@ const ATOM_RADII: Record<TokenSymbol, number> = {
   Fire: 24,
 };
 
-const FORMULA_ORDER: TokenSymbol[] = ["Ph", "C", "H", "B", "N", "O", "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca", "Li", "Be", "Fe", "Cu", "Zn", "He", "Xe", "Fire"];
+const FORMULA_ORDER: TokenSymbol[] = ["Ph", "C", "N", "O", "S", "P", "Si", "B", "H", "F", "Cl", "Ne", "Na", "Mg", "Al", "Ar", "K", "Ca", "Li", "Be", "Fe", "Cu", "Zn", "He", "Xe", "Fire"];
 
 const atomCounts = (atoms: TokenSymbol[]) => {
   const counts = new Map<TokenSymbol, number>();
@@ -90,6 +90,18 @@ const isSubsetComposition = (candidate: TokenSymbol[], target: TokenSymbol[]) =>
 };
 
 const isExpandable = (atoms: TokenSymbol[]) => MOLECULES.some((molecule) => isSubsetComposition(atoms, molecule.nodes));
+
+export const getPotentialMolecules = (atoms: TokenSymbol[], limit = 4) =>
+  MOLECULES.filter((molecule) => {
+    const moleculeCounts = atomCounts(molecule.nodes);
+    const currentCounts = atomCounts(atoms);
+    for (const [atom, count] of currentCounts) {
+      if ((moleculeCounts.get(atom) ?? 0) < count) return false;
+    }
+    return molecule.nodes.length > atoms.length || sameComposition(atoms, molecule.nodes);
+  })
+    .toSorted((a, b) => a.nodes.length - b.nodes.length || b.points - a.points)
+    .slice(0, limit);
 
 export const getEntityRadius = (atoms: TokenSymbol[]) => {
   const area = atoms.reduce((sum, atom) => sum + ATOM_RADII[atom] ** 2, 0);

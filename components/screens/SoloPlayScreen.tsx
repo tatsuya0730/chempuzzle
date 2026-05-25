@@ -16,7 +16,9 @@ export function SoloPlayScreen() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-4 px-4 py-3 sm:px-6 lg:px-8">
-      <SiteHeader title="Single Play" subtitle="分子が転がり結合する物理演算プレイ" gameOver={game.gameOver} isRunning={game.isRunning} onReset={() => gameRef.current?.resetGame()} onToggleRunning={() => gameRef.current?.toggleRunning()} />
+      <div className="w-full max-w-[620px]">
+        <SiteHeader title="Single Play" gameOver={game.gameOver} isRunning={game.isRunning} onReset={() => gameRef.current?.resetGame()} onToggleRunning={() => gameRef.current?.toggleRunning()} />
+      </div>
 
       <section className="grid flex-1 gap-5 xl:grid-cols-[minmax(0,620px)_360px]">
         <div className="flex min-h-0 flex-col">
@@ -45,7 +47,7 @@ export function SoloPlayScreen() {
         </div>
 
         <aside className="flex min-h-0 flex-col gap-4">
-          <GameStatusPanel score={game.score} level={game.level} reactionLog={game.reactionLog} comboNotice={game.comboNotice} />
+          <GameStatusPanel score={game.score} level={game.level} reactionLog={game.reactionLog} comboNotice={game.comboNotice} maxCombo={game.maxCombo} />
           <FormedMoleculesHistory reactionLog={game.reactionLog} />
         </aside>
       </section>

@@ -36,7 +36,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <button
                 type="button"
                 onClick={() => setCollapsed((value) => !value)}
-                className="absolute -right-3 top-5 z-10 flex h-10 w-6 items-center justify-center rounded-r-lg border border-l-0 border-slate-200 bg-slate-950 text-xs font-black text-white shadow-lg shadow-slate-300"
+                className="absolute -right-3 top-1/2 z-20 flex h-12 w-6 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-xs font-black text-slate-500 shadow-lg shadow-slate-300 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700"
                 aria-label={collapsed ? "サイドバーを開く" : "サイドバーを畳む"}
               >
                 {collapsed ? ">" : "<"}

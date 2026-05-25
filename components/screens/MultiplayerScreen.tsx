@@ -7,12 +7,11 @@ import { FormedMoleculesHistory, GameStatusPanel, MoleculeGrowthList } from "@/c
 import { ResultModal } from "@/components/game/ResultModal";
 import { useAtomSelection } from "@/components/game/useAtomSelection";
 
-function BoardColumn({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
+function BoardColumn({ title, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
     <section className="min-w-0">
       <div className="mb-2 flex items-center justify-between border-b border-slate-200 pb-2">
         <p className="text-base font-black text-slate-950">{title}</p>
-        <p className="text-xs font-semibold text-slate-500">{subtitle}</p>
       </div>
       <div className="mx-auto w-full max-w-[632px]">{children}</div>
     </section>
@@ -119,7 +118,7 @@ export function MultiplayerScreen() {
         </BoardColumn>
 
         <aside className="flex min-h-0 flex-col gap-4">
-          <GameStatusPanel score={game.score} level={game.level} reactionLog={game.reactionLog} comboNotice={game.comboNotice} />
+          <GameStatusPanel score={game.score} level={game.level} reactionLog={game.reactionLog} comboNotice={game.comboNotice} maxCombo={game.maxCombo} />
           <FormedMoleculesHistory reactionLog={game.reactionLog} />
         </aside>
 

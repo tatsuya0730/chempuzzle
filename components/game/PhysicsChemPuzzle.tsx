@@ -6,13 +6,14 @@ import { INITIAL_CURRENT, INITIAL_QUEUE, MAX_LOG } from "@/lib/game/config";
 import { DEFAULT_GAME_ATOMS } from "@/lib/game/periodic";
 import { getWeightedToken } from "@/lib/game/scoring";
 import { EFFECT_STYLES, TOKENS } from "@/lib/game/tokens";
-import { createAtomEntity, type PhysicsEntity, type PhysicsReaction, resolvePhysicsReaction } from "@/lib/game/physicsChemistry";
+import { createAtomEntity, getPotentialMolecules, type PhysicsEntity, type PhysicsReaction, resolvePhysicsReaction } from "@/lib/game/physicsChemistry";
 
 export type PhysicsGameSnapshot = {
   holdToken: TokenSymbol | null;
   nextQueue: TokenSymbol[];
   reactionLog: ReactionLog[];
   comboNotice: ComboNotice | null;
+  maxCombo: number;
   score: number;
   level: number;
   gameOver: boolean;
@@ -81,6 +82,7 @@ const initialSnapshot: PhysicsGameSnapshot = {
   nextQueue: INITIAL_QUEUE,
   reactionLog: [],
   comboNotice: null,
+  maxCombo: 0,
   score: 0,
   level: 1,
   gameOver: false,
@@ -181,10 +183,12 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
         releaseTimer: Phaser.Time.TimerEvent | null = null;
         reactionLog: ReactionLog[] = [];
         comboNotice: ComboNotice | null = null;
+        maxCombo = 0;
         logId = 0;
         comboId = 0;
         combining = new Set<number>();
         dropX = WIDTH / 2;
+        hoverPanel: Phaser.GameObjects.Container | null = null;
 
         create() {
           this.matter.world.setBounds(0, 0, WIDTH, HEIGHT, 24, true, true, false, true);
@@ -202,7 +206,10 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
           this.input.keyboard?.on("keydown-ENTER", () => this.startAndDrop());
           this.input.keyboard?.on("keydown-C", () => this.holdCurrent());
           this.input.keyboard?.on("keydown-X", () => this.swapWithNext());
-          this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => this.moveCurrentTo(pointer.x));
+          this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
+            this.moveCurrentTo(pointer.x);
+            this.updateHoverPanel(pointer.x, pointer.y);
+          });
           this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
             this.moveCurrentTo(pointer.x);
             this.startAndDrop();
@@ -217,13 +224,13 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
         createBeaker() {
           const bg = this.add.graphics();
           bg.fillStyle(0xf8fbff, 1);
-          bg.fillRect(0, 0, WIDTH, HEIGHT);
+          bg.fillRoundedRect(0, 0, WIDTH, HEIGHT, { tl: 0, tr: 0, bl: 34, br: 34 });
           bg.fillStyle(0xe9fbff, 0.74);
-          bg.fillRect(0, 74, WIDTH, HEIGHT - 74);
+          bg.fillRoundedRect(20, 74, WIDTH - 40, HEIGHT - 94, 28);
           bg.fillStyle(0xd5f5ff, 0.54);
-          bg.fillRect(0, HEIGHT - 232, WIDTH, 198);
+          bg.fillRoundedRect(20, HEIGHT - 232, WIDTH - 40, 198, 28);
           bg.fillStyle(0xbdeeff, 0.24);
-          bg.fillRect(0, HEIGHT - 120, WIDTH, 86);
+          bg.fillRoundedRect(20, HEIGHT - 120, WIDTH - 40, 86, 28);
           bg.fillStyle(0xffffff, 0.5);
           bg.fillRect(62, 112, 1, HEIGHT - 194);
           bg.fillRect(WIDTH - 64, 112, 1, HEIGHT - 194);
@@ -245,6 +252,7 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
             nextQueue: [...this.nextQueue],
             reactionLog: [...this.reactionLog],
             comboNotice: this.comboNotice,
+            maxCombo: this.maxCombo,
             score: this.score,
             level: this.level,
             gameOver: this.gameOver,
@@ -270,6 +278,7 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
           this.tokenActionUsed = false;
           this.reactionLog = [];
           this.comboNotice = null;
+          this.maxCombo = 0;
           this.combining.clear();
           this.releaseTimer?.remove(false);
           this.releaseTimer = null;
@@ -351,7 +360,7 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
           if (this.gameOver || this.currentId === null) return;
           const entity = this.entities.get(this.currentId);
           if (!entity) return;
-          const margin = Math.max(38, entity.radius + 8);
+          const margin = entity.radius + 2;
           this.dropX = Math.max(LEFT_WALL + margin, Math.min(RIGHT_WALL - margin, x));
           entity.body.setPosition(this.dropX, DROP_Y);
         }
@@ -445,6 +454,71 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
           if (this.currentId === id) this.currentId = null;
         }
 
+        updateHoverPanel(pointerX: number, pointerY: number) {
+          const hovered = [...this.entities.values()]
+            .filter((entity) => entity.id !== this.currentId)
+            .find((entity) => Phaser.Math.Distance.Between(pointerX, pointerY, entity.body.x, entity.body.y) <= entity.radius + 10);
+          if (!hovered) {
+            this.hideHoverPanel();
+            return;
+          }
+          const molecules = getPotentialMolecules(hovered.atoms, 4);
+          if (molecules.length === 0) {
+            this.hideHoverPanel();
+            return;
+          }
+          this.showHoverPanel(hovered, molecules);
+        }
+
+        hideHoverPanel() {
+          this.hoverPanel?.destroy();
+          this.hoverPanel = null;
+        }
+
+        showHoverPanel(entity: EntityRecord, molecules: ReturnType<typeof getPotentialMolecules>) {
+          this.hideHoverPanel();
+          const width = 176;
+          const height = 58 + molecules.length * 28;
+          const x = Math.min(WIDTH - width - 16, Math.max(16, entity.body.x + entity.radius + 12));
+          const y = Math.min(HEIGHT - height - 16, Math.max(22, entity.body.y - height / 2));
+          const panel = this.add.container(x, y);
+          panel.setDepth(80);
+          const bg = this.add.graphics();
+          bg.fillStyle(0x0f172a, 0.9);
+          bg.fillRoundedRect(0, 0, width, height, 12);
+          bg.lineStyle(1, 0x7dd3fc, 0.64);
+          bg.strokeRoundedRect(0, 0, width, height, 12);
+          panel.add(bg);
+          panel.add(
+            this.add.text(12, 10, `${entity.formula} ->`, {
+              fontFamily: "Arial, Helvetica, sans-serif",
+              fontSize: "12px",
+              fontStyle: "900",
+              color: "#cffafe",
+            }),
+          );
+          molecules.forEach((molecule, index) => {
+            const lineY = 34 + index * 28;
+            panel.add(
+              this.add.text(12, lineY, molecule.formula, {
+                fontFamily: "Arial, Helvetica, sans-serif",
+                fontSize: "15px",
+                fontStyle: "900",
+                color: "#ffffff",
+              }),
+            );
+            panel.add(
+              this.add.text(74, lineY + 2, molecule.name, {
+                fontFamily: "Arial, Helvetica, sans-serif",
+                fontSize: "10px",
+                fontStyle: "700",
+                color: "#cbd5e1",
+              }),
+            );
+          });
+          this.hoverPanel = panel;
+        }
+
         handleCollision(event: CollisionEvent) {
           if (!this.running || this.gameOver) return;
           for (const pair of event.pairs) {
@@ -488,6 +562,8 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
             this.score += reaction.points;
             this.flash(x, y, 0xfb923c);
             this.comboNotice = { id: ++this.comboId, chain: 1, matchCount: 1, bonusPoints: 0, gainedPoints: reaction.points, formulas: reaction.formulas };
+            this.maxCombo = Math.max(this.maxCombo, 1);
+            this.showBoardCombo(x, y, this.comboNotice);
             this.emitSnapshot();
             return;
           }
@@ -506,11 +582,14 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
               count: molecule.nodes.length,
               points: reaction.points,
               imageUrl: molecule.imageUrl,
+              fact: molecule.fact,
             },
             ...this.reactionLog,
           ].slice(0, MAX_LOG);
           this.comboNotice = { id: ++this.comboId, chain: 1, matchCount: 1, bonusPoints: 0, gainedPoints: reaction.points, formulas: reaction.formulas };
+          this.maxCombo = Math.max(this.maxCombo, 1);
           this.flash(x, y, Number(`0x${EFFECT_STYLES[molecule.effect].stroke.slice(1)}`));
+          this.showBoardCombo(x, y, this.comboNotice);
           this.emitSnapshot();
         }
 
@@ -532,6 +611,27 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
             duration: 420,
             ease: "Cubic.easeOut",
             onComplete: () => burst.destroy(),
+          });
+        }
+
+        showBoardCombo(x: number, y: number, combo: ComboNotice) {
+          const label = this.add.text(x, y - 28, `${combo.formulas.join(" + ")}  +${combo.gainedPoints}`, {
+            fontFamily: "Arial, Helvetica, sans-serif",
+            fontSize: "17px",
+            fontStyle: "900",
+            color: "#0f172a",
+            backgroundColor: "rgba(255,255,255,0.86)",
+            padding: { x: 10, y: 5 },
+          });
+          label.setOrigin(0.5);
+          label.setDepth(90);
+          this.tweens.add({
+            targets: label,
+            y: y - 74,
+            alpha: 0,
+            duration: 900,
+            ease: "Cubic.easeOut",
+            onComplete: () => label.destroy(),
           });
         }
 
