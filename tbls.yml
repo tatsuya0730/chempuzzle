@@ -1,0 +1,27 @@
+dsn: ${TBLS_DSN}
+docPath: ${TBLS_DOC_PATH}
+
+format:
+  adjust: true
+  sort: false
+
+er:
+  skip: false
+
+include:
+  - public.*
+
+exclude:
+  - auth.*
+  - storage.*
+  - realtime.*
+  - vault.*
+  - cron.*
+  - extensions.*
+  - supabase_migrations.*
+
+lint:
+  requireTableComment:
+    enabled: true
+  requireColumnComment:
+    enabled: true
