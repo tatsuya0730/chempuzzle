@@ -63,7 +63,7 @@ export function MultiplayerScreen() {
         <section className="w-full rounded-lg border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/70">
           <p className="text-xs font-black uppercase text-slate-500">Multiplayer room</p>
           <h1 className="mt-2 text-3xl font-black text-slate-950">マルチ部屋に入室</h1>
-          <p className="mt-3 text-sm font-semibold leading-7 text-slate-600">現在のモック対戦ルームは合言葉付きです。合言葉に <span className="font-black text-slate-950">mock</span> を入力すると、1v1 レイアウトを確認できます。</p>
+          <p className="mt-3 text-sm font-semibold leading-7 text-slate-600">招待されたルームコードを入力して、1v1 対戦ルームに入室します。</p>
 
           <form
             className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto]"
@@ -74,7 +74,7 @@ export function MultiplayerScreen() {
                 setPasswordError("");
                 return;
               }
-              setPasswordError("パスワードが違います。mock を入力してください。");
+              setPasswordError("ルームコードを確認してください。");
             }}
           >
             <label className="min-w-0">
@@ -83,7 +83,7 @@ export function MultiplayerScreen() {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 className="mt-2 w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-bold outline-none transition focus:border-slate-950 focus:bg-white"
-                placeholder="mock"
+                placeholder="room-code"
                 type="text"
                 maxLength={12}
               />
@@ -106,7 +106,7 @@ export function MultiplayerScreen() {
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
               <p className="text-xs font-black text-slate-500">Room</p>
-              <p className="mt-1 text-lg font-black text-slate-950">demo-lab</p>
+              <p className="mt-1 text-lg font-black text-slate-950">Private</p>
             </div>
           </div>
         </section>
@@ -122,7 +122,7 @@ export function MultiplayerScreen() {
           <p className="text-xs font-semibold text-slate-500">リアルタイム対戦用の 1v1 レイアウト</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <span className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-black text-emerald-950">Room: demo-lab</span>
+          <span className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-black text-emerald-950">Room: Private</span>
           <button type="button" onClick={game.toggleRunning} className="min-w-28 rounded-lg bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-300">
             {game.gameOver ? "Restart" : game.isRunning ? "Stop" : "Start"}
           </button>

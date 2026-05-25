@@ -151,6 +151,31 @@ const getPositionsByToken = (grid: Grid) => {
   return positionsByToken;
 };
 
+const structureMatches = (match: Match, grid: Grid) => {
+  const degreeByNode = match.molecule.nodes.map((_, nodeIndex) => match.molecule.bonds.filter((bond) => bond.a === nodeIndex || bond.b === nodeIndex).length);
+  const occupied = new Set(match.nodePositions.map(positionKey));
+
+  for (const bond of match.molecule.bonds) {
+    const from = match.nodePositions[bond.a];
+    const to = match.nodePositions[bond.b];
+    if (!from || !to || !handsConnect(grid, from, to)) return false;
+  }
+
+  for (let nodeIndex = 0; nodeIndex < match.nodePositions.length; nodeIndex += 1) {
+    const position = match.nodePositions[nodeIndex];
+    const bondedNeighbors = match.molecule.bonds
+      .filter((bond) => bond.a === nodeIndex || bond.b === nodeIndex)
+      .map((bond) => match.nodePositions[bond.a === nodeIndex ? bond.b : bond.a])
+      .filter((neighbor): neighbor is Position => Boolean(neighbor));
+
+    const adjacentSelectedCount = getNeighbors(position.row, position.col).filter((neighbor) => occupied.has(positionKey(neighbor))).length;
+    if (adjacentSelectedCount < degreeByNode[nodeIndex]) return false;
+    if (bondedNeighbors.some((neighbor) => !handsConnect(grid, position, neighbor))) return false;
+  }
+
+  return true;
+};
+
 export const findMoleculeCandidates = (grid: Grid): Match[] => {
   const candidates = new Map<string, Match>();
   const positionsByToken = getPositionsByToken(grid);
@@ -174,6 +199,7 @@ export const findMoleculeCandidates = (grid: Grid): Match[] => {
           points: 0,
         };
         match.points = getMatchPoints(match);
+        if (!structureMatches(match, grid)) return;
         if (molecule.deferIfExpandableTo === "CO2" && isCoExpandable(match, grid)) return;
         candidates.set(key, match);
         return;

@@ -7,9 +7,9 @@ export function RankingMock() {
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-lg font-black text-slate-950">オンラインランキング</h2>
-          <p className="text-xs font-semibold text-slate-500">mock online leaderboard</p>
+          <p className="text-xs font-semibold text-slate-500">weekly leaderboard</p>
         </div>
-        <p className="text-xs font-semibold text-slate-500">スコア送信機能は今後接続予定</p>
+        <p className="text-xs font-semibold text-slate-500">ログイン済みプレイヤーのベストスコア</p>
       </div>
       <div className="mt-3 overflow-hidden rounded-lg border border-slate-200">
         {RANKINGS.map((entry) => (

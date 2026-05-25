@@ -7,6 +7,7 @@ const REFRESH_COOKIE = "cp_refresh_token";
 export type AuthPayload = {
   email: string;
   password: string;
+  data?: Record<string, string>;
 };
 
 export function getSupabaseConfig() {
@@ -14,10 +15,30 @@ export function getSupabaseConfig() {
   const anonKey = process.env.SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !anonKey) {
-    return { error: "Supabase URL or anon key is not configured." };
+    return { error: "Authentication service is not configured." };
   }
 
   return { url: url.replace(/\/$/, ""), anonKey };
+}
+
+export async function callSupabaseRest(path: string, init: RequestInit = {}, accessToken?: string) {
+  const config = getSupabaseConfig();
+  if ("error" in config) {
+    return { ok: false, status: 500, data: { error: config.error } };
+  }
+
+  const response = await fetch(`${config.url}/rest/v1/${path}`, {
+    ...init,
+    headers: {
+      apikey: config.anonKey,
+      Authorization: `Bearer ${accessToken ?? config.anonKey}`,
+      "Content-Type": "application/json",
+      ...(init.headers ?? {}),
+    },
+  });
+  const data = await response.json().catch(() => ({}));
+
+  return { ok: response.ok, status: response.status, data };
 }
 
 export async function callSupabaseAuth(path: string, body: AuthPayload) {
