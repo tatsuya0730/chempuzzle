@@ -25,6 +25,7 @@ export const getWeightedToken = (level: number): TokenSymbol => {
     ["Ne", level >= 7 ? 0.4 + level * 0.07 : 0.04],
     ["Ar", level >= 8 ? 0.35 + level * 0.06 : 0.03],
     ["Xe", level >= 9 ? 0.55 + level * 0.08 : 0.04],
+    ["Fire", level >= 2 ? 1.6 + level * 0.08 : 0.6],
   ];
   const total = base.reduce((sum, [, weight]) => sum + weight, 0);
   let pick = Math.random() * total;

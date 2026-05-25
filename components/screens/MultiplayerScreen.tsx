@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Grid } from "@/types/game";
 import { createEmptyGrid, makeTile } from "@/lib/game/board";
 import { BOARD_WIDTH } from "@/lib/game/config";
@@ -25,6 +25,7 @@ function createOpponentGrid(): Grid {
     [12, 3, "O"],
     [12, 4, "O"],
     [12, 5, "F"],
+    [8, 4, "Fire"],
   ] as const;
 
   placements.forEach(([row, col, token]) => {
@@ -37,9 +38,9 @@ function createOpponentGrid(): Grid {
 function BoardColumn({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
     <section className="min-w-0">
-      <div className="mb-3 rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-lg shadow-slate-200/60">
-        <p className="text-sm font-black text-slate-950">{title}</p>
-        <p className="mt-1 text-xs font-semibold text-slate-500">{subtitle}</p>
+      <div className="mb-2 flex items-center justify-between border-b border-slate-200 pb-2">
+        <p className="text-base font-black text-slate-950">{title}</p>
+        <p className="text-xs font-semibold text-slate-500">{subtitle}</p>
       </div>
       <div className="mx-auto w-full" style={{ maxWidth: `${BOARD_WIDTH + 72}px` }}>
         {children}
@@ -50,8 +51,66 @@ function BoardColumn({ title, subtitle, children }: { title: string; subtitle: s
 
 export function MultiplayerScreen() {
   const game = useChemPuzzleGame();
+  const [password, setPassword] = useState("");
+  const [joined, setJoined] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
   const opponentGrid = useMemo(() => createOpponentGrid(), []);
   const opponentCurrent = useMemo(() => makeTile("Xe"), []);
+
+  if (!joined) {
+    return (
+      <div className="mx-auto flex min-h-screen max-w-3xl items-center px-4 py-8">
+        <section className="w-full rounded-lg border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/70">
+          <p className="text-xs font-black uppercase text-slate-500">Multiplayer room</p>
+          <h1 className="mt-2 text-3xl font-black text-slate-950">マルチ部屋に入室</h1>
+          <p className="mt-3 text-sm font-semibold leading-7 text-slate-600">現在のモック対戦ルームはパスワード付きです。パスワードに <span className="font-black text-slate-950">mock</span> を入力すると、1v1 レイアウトを確認できます。</p>
+
+          <form
+            className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto]"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (password.trim() === "mock") {
+                setJoined(true);
+                setPasswordError("");
+                return;
+              }
+              setPasswordError("パスワードが違います。mock を入力してください。");
+            }}
+          >
+            <label className="min-w-0">
+              <span className="text-xs font-black uppercase text-slate-500">Password</span>
+              <input
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                className="mt-2 w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-bold outline-none transition focus:border-slate-950 focus:bg-white"
+                placeholder="mock"
+                type="password"
+              />
+            </label>
+            <button type="submit" className="self-end rounded-lg bg-slate-950 px-6 py-3 text-sm font-black text-white shadow-lg shadow-slate-300">
+              入室
+            </button>
+          </form>
+          {passwordError ? <p className="mt-3 text-sm font-bold text-rose-600">{passwordError}</p> : null}
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <p className="text-xs font-black text-slate-500">Mode</p>
+              <p className="mt-1 text-lg font-black text-slate-950">1v1</p>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <p className="text-xs font-black text-slate-500">Gimmick</p>
+              <p className="mt-1 text-lg font-black text-slate-950">Water / Fire</p>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <p className="text-xs font-black text-slate-500">Room</p>
+              <p className="mt-1 text-lg font-black text-slate-950">demo-lab</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen px-4 py-3 sm:px-5">
@@ -71,7 +130,7 @@ export function MultiplayerScreen() {
         </div>
       </header>
 
-      <section className="grid gap-4 2xl:grid-cols-[minmax(0,560px)_360px_minmax(0,560px)]">
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,520px)_340px_minmax(0,520px)]">
         <BoardColumn title="You" subtitle="自分の盤面">
           <GameHud
             score={game.score}

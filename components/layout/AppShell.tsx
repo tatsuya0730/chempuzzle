@@ -5,12 +5,9 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 const NAV_ITEMS = [
-  { href: "/play", label: "個人プレイ", short: "Solo" },
-  { href: "/multiplayer", label: "マルチプレイ", short: "Multi" },
-  { href: "/mypage", label: "マイページ", short: "Me" },
-  { href: "/history", label: "プレイ履歴", short: "Log" },
-  { href: "/settings", label: "設定", short: "Set" },
   { href: "/tutorial", label: "チュートリアル", short: "Tips" },
+  { href: "/play", label: "シングルプレイ", short: "Solo" },
+  { href: "/multiplayer", label: "マルチプレイ", short: "Multi" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -55,12 +52,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               })}
             </nav>
 
-            {collapsed ? null : (
-              <div className="mt-auto rounded-lg border border-cyan-100 bg-cyan-50 p-3">
-                <p className="text-xs font-black text-cyan-950">Online status</p>
-                <p className="mt-1 text-xs font-semibold leading-5 text-cyan-800">マルチプレイは画面プロトタイプです。リアルタイム同期は Supabase Realtime 連携で実装できます。</p>
-              </div>
-            )}
+            <Link
+              href="/mypage"
+              className={`mt-auto flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 transition hover:border-slate-300 hover:bg-white ${collapsed ? "justify-center" : ""}`}
+              title="新規登録 / ログイン"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-950 text-xs font-black text-white">?</span>
+              {collapsed ? null : (
+                <span className="min-w-0">
+                  <span className="block text-xs font-black text-slate-950">未ログイン</span>
+                  <span className="block text-xs font-semibold text-slate-500">新規登録 / ログイン</span>
+                </span>
+              )}
+            </Link>
           </div>
         </aside>
 

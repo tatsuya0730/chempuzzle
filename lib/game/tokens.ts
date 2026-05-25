@@ -21,6 +21,7 @@ export const TOKENS: Record<TokenSymbol, TokenInfo> = {
   Ar: { label: "Argon", valence: 0, category: "noble", shell: "bg-purple-100 border-purple-300", text: "text-purple-950", glow: "shadow-purple-300/35" },
   Xe: { label: "Xenon", valence: 2, category: "noble", shell: "bg-teal-100 border-teal-300", text: "text-teal-950", glow: "shadow-teal-300/35" },
   Ph: { label: "Benzene ring", valence: 1, category: "group", shell: "bg-cyan-950 border-cyan-500", text: "text-cyan-50", glow: "shadow-cyan-500/35" },
+  Fire: { label: "Flame", valence: 0, category: "gimmick", shell: "bg-red-500 border-orange-300", text: "text-white", glow: "shadow-orange-400/65" },
 };
 
 export const EFFECT_STYLES: Record<EffectKind, EffectStyle> = {

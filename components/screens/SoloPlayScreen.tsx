@@ -15,7 +15,7 @@ export function SoloPlayScreen() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-4 px-4 py-3 sm:px-6 lg:px-8">
-      <SiteHeader gameOver={game.gameOver} isRunning={game.isRunning} onReset={game.resetGame} onToggleRunning={game.toggleRunning} />
+      <SiteHeader title="Single Play" subtitle="水と炎のギミックを使う個人プレイ" gameOver={game.gameOver} isRunning={game.isRunning} onReset={game.resetGame} onToggleRunning={game.toggleRunning} />
 
       <section className="grid flex-1 gap-5 xl:grid-cols-[minmax(0,620px)_360px]">
         <div className="flex min-h-0 flex-col">
@@ -51,8 +51,10 @@ export function SoloPlayScreen() {
         <ReactionHistory reactionLog={game.reactionLog} />
       </section>
 
-      <RankingMock />
-      <SiteFooter />
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,620px)_360px]">
+        <RankingMock />
+        <SiteFooter />
+      </div>
       <ResultModal gameOver={game.gameOver} result={game.resultSummary} onRestart={game.resetGame} />
     </div>
   );

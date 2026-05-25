@@ -18,7 +18,8 @@ export type TokenSymbol =
   | "Ne"
   | "Ar"
   | "Xe"
-  | "Ph";
+  | "Ph"
+  | "Fire";
 
 export type Direction = 0 | 1 | 2 | 3 | 4 | 5;
 export type CellTile = {
@@ -37,7 +38,7 @@ export type Tile = {
   screenY: number;
 };
 export type EffectKind = "clean" | "toxic" | "sleep" | "energy" | "reactive" | "salt" | "inert";
-export type TokenCategory = "organic" | "nonmetal" | "halogen" | "metal" | "noble" | "group";
+export type TokenCategory = "organic" | "nonmetal" | "halogen" | "metal" | "noble" | "group" | "gimmick";
 
 export type TokenInfo = {
   label: string;

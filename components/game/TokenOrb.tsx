@@ -5,6 +5,7 @@ import { BenzeneIcon } from "./BenzeneIcon";
 export function TokenOrb({ token, active = false, clearing = false }: { token: TokenSymbol; active?: boolean; clearing?: boolean }) {
   const styles = TOKENS[token];
   const isGroup = styles.category === "group";
+  const isFire = token === "Fire";
 
   return (
     <div
@@ -14,7 +15,7 @@ export function TokenOrb({ token, active = false, clearing = false }: { token: T
       title={`${token}: ${styles.label}`}
     >
       {isGroup ? <BenzeneIcon /> : null}
-      {isGroup ? null : <span className="relative z-10">{token}</span>}
+      {isGroup ? null : <span className="relative z-10">{isFire ? "火" : token}</span>}
     </div>
   );
 }

@@ -43,8 +43,8 @@ export function GameHud({
   onSwapNext: () => void;
 }) {
   return (
-    <div className="mb-3 grid gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-lg shadow-slate-200/70 sm:grid-cols-[minmax(260px,1fr)_auto] xl:grid-cols-[minmax(320px,1fr)_156px_auto_minmax(190px,220px)] xl:items-center">
-      <div className="grid grid-cols-[minmax(0,2fr)_minmax(92px,0.75fr)] gap-2">
+    <div className="mb-3 grid gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-lg shadow-slate-200/70 sm:grid-cols-2">
+      <div className="grid grid-cols-[minmax(0,2fr)_minmax(92px,0.75fr)] gap-2 sm:col-span-2">
         <div className="rounded-lg bg-slate-950 px-5 py-3 text-white">
           <p className="text-xs font-bold uppercase text-slate-400">Score</p>
           <p className="text-3xl font-black leading-tight tabular-nums">{formatScore(score)}</p>
@@ -88,7 +88,7 @@ export function GameHud({
           ))}
         </div>
       </div>
-      <div className="min-h-[76px] min-w-[190px]">
+      <div className="min-h-[76px] min-w-0">
         {comboNotice ? (
           <ComboFlash combo={comboNotice} />
         ) : (

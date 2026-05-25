@@ -24,7 +24,7 @@ body {
 
 .beaker-frame {
   position: relative;
-  min-height: 640px;
+  min-height: 552px;
   border: 9px solid rgba(14, 116, 144, 0.34);
   border-top-width: 0;
   border-radius: 0 0 42px 42px;
