@@ -4,7 +4,6 @@ import { BOARD_WIDTH } from "@/lib/game/config";
 import { useChemPuzzleGame } from "@/lib/game/useChemPuzzleGame";
 import { GameBoard } from "@/components/game/GameBoard";
 import { GameHud } from "@/components/game/GameHud";
-import { RankingMock } from "@/components/game/RankingMock";
 import { ReactionHistory } from "@/components/game/ReactionHistory";
 import { ResultModal } from "@/components/game/ResultModal";
 import { SiteFooter } from "@/components/game/SiteFooter";
@@ -51,10 +50,7 @@ export function SoloPlayScreen() {
         <ReactionHistory reactionLog={game.reactionLog} />
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,620px)_360px]">
-        <RankingMock />
-        <SiteFooter />
-      </div>
+      <SiteFooter />
       <ResultModal gameOver={game.gameOver} result={game.resultSummary} onRestart={game.resetGame} />
     </div>
   );

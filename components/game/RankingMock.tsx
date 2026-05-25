@@ -6,8 +6,8 @@ export function RankingMock() {
     <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-lg shadow-slate-200/60">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-lg font-black text-slate-950">Ranking</h2>
-          <p className="text-xs font-semibold text-slate-500">mock leaderboard</p>
+          <h2 className="text-lg font-black text-slate-950">オンラインランキング</h2>
+          <p className="text-xs font-semibold text-slate-500">mock online leaderboard</p>
         </div>
         <p className="text-xs font-semibold text-slate-500">スコア送信機能は今後接続予定</p>
       </div>

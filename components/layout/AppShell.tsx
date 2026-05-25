@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { href: "/tutorial", label: "チュートリアル", short: "Tips" },
   { href: "/play", label: "シングルプレイ", short: "Solo" },
   { href: "/multiplayer", label: "マルチプレイ", short: "Multi" },
+  { href: "/ranking", label: "ランキング", short: "Rank" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

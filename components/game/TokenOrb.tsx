@@ -1,6 +1,7 @@
 import type { TokenSymbol } from "@/types/game";
 import { TOKENS } from "@/lib/game/tokens";
 import { BenzeneIcon } from "./BenzeneIcon";
+import { FlameIcon } from "./FlameIcon";
 
 export function TokenOrb({ token, active = false, clearing = false }: { token: TokenSymbol; active?: boolean; clearing?: boolean }) {
   const styles = TOKENS[token];
@@ -15,7 +16,8 @@ export function TokenOrb({ token, active = false, clearing = false }: { token: T
       title={`${token}: ${styles.label}`}
     >
       {isGroup ? <BenzeneIcon /> : null}
-      {isGroup ? null : <span className="relative z-10">{isFire ? "火" : token}</span>}
+      {isFire ? <FlameIcon /> : null}
+      {isGroup || isFire ? null : <span className="relative z-10">{token}</span>}
     </div>
   );
 }
