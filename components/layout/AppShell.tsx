@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -21,9 +22,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <aside className="relative border-r border-slate-200 bg-white shadow-xl shadow-slate-200/70">
           <div className="sticky top-0 flex h-screen flex-col gap-4 p-3">
             <div className="flex items-center justify-between gap-2">
-              <Link href="/play" className="min-w-0">
-                <p className={`font-black leading-none text-slate-950 ${collapsed ? "text-xl" : "text-2xl"}`}>{collapsed ? "CP" : "ChemPuzzle"}</p>
-                {collapsed ? null : <p className="mt-1 text-xs font-semibold text-slate-500">reaction arena</p>}
+              <Link href="/play" className={`flex min-w-0 items-center gap-2 ${collapsed ? "justify-center" : ""}`} title="ChemPuzzle">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-sm">
+                  <Image src="/icon.png" alt="" width={40} height={40} className="h-10 w-10 object-contain" priority unoptimized />
+                </span>
+                {collapsed ? null : (
+                  <span className="min-w-0">
+                    <span className="block text-2xl font-black leading-none text-slate-950">ChemPuzzle</span>
+                    <span className="mt-1 block text-xs font-semibold text-slate-500">reaction arena</span>
+                  </span>
+                )}
               </Link>
               <button
                 type="button"

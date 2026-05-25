@@ -189,10 +189,10 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
           this.input.keyboard?.on("keydown-A", () => this.nudgeCurrent(-1));
           this.input.keyboard?.on("keydown-RIGHT", () => this.nudgeCurrent(1));
           this.input.keyboard?.on("keydown-D", () => this.nudgeCurrent(1));
-          this.input.keyboard?.on("keydown-DOWN", () => this.dropCurrent());
-          this.input.keyboard?.on("keydown-S", () => this.dropCurrent());
-          this.input.keyboard?.on("keydown-SPACE", () => this.dropCurrent());
-          this.input.keyboard?.on("keydown-ENTER", () => (this.running ? this.dropCurrent() : this.toggleRunning()));
+          this.input.keyboard?.on("keydown-DOWN", () => this.startAndDrop());
+          this.input.keyboard?.on("keydown-S", () => this.startAndDrop());
+          this.input.keyboard?.on("keydown-SPACE", () => this.startAndDrop());
+          this.input.keyboard?.on("keydown-ENTER", () => this.startAndDrop());
           this.input.keyboard?.on("keydown-C", () => this.holdCurrent());
           this.input.keyboard?.on("keydown-X", () => this.swapWithNext());
           this.matter.world.on("collisionstart", (event: CollisionEvent) => this.handleCollision(event));
@@ -204,12 +204,27 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
 
         createBeaker() {
           const bg = this.add.graphics();
-          bg.fillStyle(0xf8fafc, 1);
+          bg.fillStyle(0xf8fbff, 1);
           bg.fillRect(0, 0, WIDTH, HEIGHT);
-          bg.fillStyle(0xe0f2fe, 0.46);
-          bg.fillRect(34, 42, WIDTH - 68, HEIGHT - 86);
-          bg.fillStyle(0xffffff, 0.24);
-          bg.fillRect(WIDTH - 90, 54, 18, HEIGHT - 150);
+          bg.fillStyle(0xe9fbff, 0.74);
+          bg.fillRect(0, 74, WIDTH, HEIGHT - 74);
+          bg.fillStyle(0xd5f5ff, 0.54);
+          bg.fillRect(0, HEIGHT - 232, WIDTH, 198);
+          bg.fillStyle(0xbdeeff, 0.24);
+          bg.fillRect(0, HEIGHT - 120, WIDTH, 86);
+          bg.fillStyle(0xffffff, 0.5);
+          bg.fillRect(62, 112, 1, HEIGHT - 194);
+          bg.fillRect(WIDTH - 64, 112, 1, HEIGHT - 194);
+          bg.fillStyle(0xffffff, 0.34);
+          bg.fillRect(WIDTH - 88, 96, 16, HEIGHT - 206);
+          bg.fillStyle(0x7dd3fc, 0.22);
+          [
+            [88, 520, 5],
+            [132, 430, 3],
+            [428, 500, 4],
+            [472, 392, 3],
+            [214, 562, 2],
+          ].forEach(([x, y, radius]) => bg.fillCircle(x, y, radius));
         }
 
         emitSnapshot() {
@@ -303,7 +318,7 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
           return id;
         }
 
-        releaseCurrent(delay = 680) {
+        releaseCurrent(delay = 360) {
           if (this.currentId === null || this.releaseTimer !== null) return;
           this.currentId = null;
           this.releaseTimer = window.setTimeout(() => {
@@ -327,8 +342,22 @@ export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { enabledAtoms?: 
           if (!entity) return;
           entity.body.setIgnoreGravity(false);
           entity.body.setStatic(false);
-          entity.body.setVelocityY(2.6);
-          this.releaseCurrent(900);
+          entity.body.setVelocity(0, 18);
+          this.releaseCurrent(360);
+        }
+
+        startAndDrop() {
+          if (this.gameOver) {
+            this.resetGame();
+            this.time.delayedCall(30, () => this.dropCurrent());
+            return;
+          }
+          if (!this.running) {
+            this.running = true;
+            this.matter.world.resume();
+          }
+          this.dropCurrent();
+          this.emitSnapshot();
         }
 
         holdCurrent() {
