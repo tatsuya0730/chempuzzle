@@ -30,6 +30,15 @@ function HexExample({ tokens }: { tokens: Array<TokenSymbol | null> }) {
   );
 }
 
+function KeyCap({ label, body }: { label: string; body: string }) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-lg shadow-slate-200/60">
+      <span className="flex h-11 min-w-11 items-center justify-center rounded-md bg-slate-950 px-3 text-sm font-black text-white">{label}</span>
+      <span className="text-sm font-bold text-slate-600">{body}</span>
+    </div>
+  );
+}
+
 export default function TutorialPage() {
   return (
     <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-5 px-4 py-6 sm:px-6 lg:px-8">
@@ -63,6 +72,28 @@ export default function TutorialPage() {
           </div>
           <p className="mt-8 text-sm font-semibold leading-6 text-orange-900">炎が落ちると周囲の可燃性原子を発火。Ph など燃えやすい片があると範囲が広がります。</p>
         </article>
+      </section>
+
+      <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/70">
+        <div className="flex flex-col gap-2 border-b border-slate-200 pb-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-lg font-black text-slate-950">操作方法</h2>
+            <p className="mt-1 text-sm font-semibold text-slate-500">盤面を見ながら、よく使う操作だけを手元のキーに集めています。</p>
+          </div>
+          <div className="flex gap-1">
+            <MiniToken token="H" />
+            <MiniToken token="O" />
+            <MiniToken token="Fire" />
+          </div>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <KeyCap label="← / A" body="左へ移動" />
+          <KeyCap label="→ / D" body="右へ移動" />
+          <KeyCap label="↓ / S" body="ソフトドロップ" />
+          <KeyCap label="Space" body="ハードドロップ" />
+          <KeyCap label="C" body="ホールド" />
+          <KeyCap label="X" body="Next と交換" />
+        </div>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">

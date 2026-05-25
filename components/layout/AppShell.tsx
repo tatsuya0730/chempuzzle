@@ -54,7 +54,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </nav>
 
             <Link
-              href="/mypage"
+              href="/login"
               className={`mt-auto flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 transition hover:border-slate-300 hover:bg-white ${collapsed ? "justify-center" : ""}`}
               title="新規登録 / ログイン"
             >

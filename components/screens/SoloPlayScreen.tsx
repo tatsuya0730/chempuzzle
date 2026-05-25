@@ -20,11 +20,9 @@ export function SoloPlayScreen() {
         <div className="flex min-h-0 flex-col">
           <div className="mx-auto w-full" style={{ maxWidth: `${BOARD_WIDTH + 72}px` }}>
             <GameHud
-              score={game.score}
-              level={game.level}
               holdToken={game.holdToken}
               nextQueue={game.nextQueue}
-              comboNotice={game.comboNotice}
+              reactionLog={game.reactionLog}
               canUseTokenAction={game.canUseTokenAction}
               onHold={game.holdCurrent}
               onSwapNext={game.swapWithNext}
@@ -47,7 +45,7 @@ export function SoloPlayScreen() {
           </div>
         </div>
 
-        <ReactionHistory reactionLog={game.reactionLog} />
+        <ReactionHistory reactionLog={game.reactionLog} score={game.score} level={game.level} comboNotice={game.comboNotice} />
       </section>
 
       <SiteFooter />

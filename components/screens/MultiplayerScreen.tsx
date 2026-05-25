@@ -63,7 +63,7 @@ export function MultiplayerScreen() {
         <section className="w-full rounded-lg border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/70">
           <p className="text-xs font-black uppercase text-slate-500">Multiplayer room</p>
           <h1 className="mt-2 text-3xl font-black text-slate-950">マルチ部屋に入室</h1>
-          <p className="mt-3 text-sm font-semibold leading-7 text-slate-600">現在のモック対戦ルームはパスワード付きです。パスワードに <span className="font-black text-slate-950">mock</span> を入力すると、1v1 レイアウトを確認できます。</p>
+          <p className="mt-3 text-sm font-semibold leading-7 text-slate-600">現在のモック対戦ルームは合言葉付きです。合言葉に <span className="font-black text-slate-950">mock</span> を入力すると、1v1 レイアウトを確認できます。</p>
 
           <form
             className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto]"
@@ -78,14 +78,16 @@ export function MultiplayerScreen() {
             }}
           >
             <label className="min-w-0">
-              <span className="text-xs font-black uppercase text-slate-500">Password</span>
+              <span className="text-xs font-black uppercase text-slate-500">Room code</span>
               <input
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 className="mt-2 w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-bold outline-none transition focus:border-slate-950 focus:bg-white"
                 placeholder="mock"
-                type="password"
+                type="text"
+                maxLength={12}
               />
+              <span className="mt-1 block text-right text-xs font-bold text-slate-400">{password.length}/12</span>
             </label>
             <button type="submit" className="self-end rounded-lg bg-slate-950 px-6 py-3 text-sm font-black text-white shadow-lg shadow-slate-300">
               入室
@@ -133,11 +135,9 @@ export function MultiplayerScreen() {
       <section className="grid gap-4 xl:grid-cols-[minmax(0,520px)_340px_minmax(0,520px)]">
         <BoardColumn title="You" subtitle="自分の盤面">
           <GameHud
-            score={game.score}
-            level={game.level}
             holdToken={game.holdToken}
             nextQueue={game.nextQueue}
-            comboNotice={game.comboNotice}
+            reactionLog={game.reactionLog}
             canUseTokenAction={game.canUseTokenAction}
             onHold={game.holdCurrent}
             onSwapNext={game.swapWithNext}
@@ -145,7 +145,7 @@ export function MultiplayerScreen() {
           <GameBoard displayGrid={game.displayGrid} current={game.current} predictedLanding={game.predictedLanding} clearing={game.clearing} clearingMatches={game.clearingMatches} />
         </BoardColumn>
 
-        <ReactionHistory reactionLog={game.reactionLog} />
+        <ReactionHistory reactionLog={game.reactionLog} score={game.score} level={game.level} comboNotice={game.comboNotice} />
 
         <BoardColumn title="Opponent" subtitle="相手の盤面プレビュー">
           <div className="mb-3 grid grid-cols-2 gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-lg shadow-slate-200/60">

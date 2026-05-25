@@ -1,59 +1,26 @@
-import type { ComboNotice, TokenSymbol } from "@/types/game";
-import { formatScore } from "@/lib/game/scoring";
+import type { ReactionLog, TokenSymbol } from "@/types/game";
 import { MiniToken } from "./MiniToken";
 
-function ComboFlash({ combo }: { combo: ComboNotice }) {
-  const showCombo = combo.matchCount > 1;
-  const showChain = combo.chain > 1;
-
-  return (
-    <div key={combo.id} className="combo-flash rounded-lg border border-cyan-200 bg-cyan-950 px-4 py-3 text-white shadow-lg shadow-cyan-200/50">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-black uppercase text-cyan-200">{showChain ? `${combo.chain} Chain` : showCombo ? `${combo.matchCount} Combo` : "Reaction"}</p>
-          <p className="mt-1 text-xl font-black tabular-nums">+{formatScore(combo.gainedPoints)}</p>
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-1">
-          {showChain && showCombo ? <p className="rounded-md bg-white/12 px-2 py-1 text-xs font-black">{combo.matchCount} Combo</p> : null}
-          {combo.bonusPoints > 0 ? <p className="rounded-md bg-white/12 px-2 py-1 text-xs font-black tabular-nums">Bonus +{formatScore(combo.bonusPoints)}</p> : null}
-        </div>
-      </div>
-      <p className="mt-2 truncate text-xs font-semibold text-cyan-100/85">{combo.formulas.join(" + ")}</p>
-    </div>
-  );
-}
-
 export function GameHud({
-  score,
-  level,
   holdToken,
   nextQueue,
-  comboNotice,
+  reactionLog,
   canUseTokenAction,
   onHold,
   onSwapNext,
 }: {
-  score: number;
-  level: number;
   holdToken: TokenSymbol | null;
   nextQueue: TokenSymbol[];
-  comboNotice: ComboNotice | null;
+  reactionLog: ReactionLog[];
   canUseTokenAction: boolean;
   onHold: () => void;
   onSwapNext: () => void;
 }) {
+  const averagePh = reactionLog.length > 0 ? reactionLog.reduce((sum, entry) => sum + entry.ph, 0) / reactionLog.length : 7;
+  const phPosition = Math.max(0, Math.min(100, (averagePh / 14) * 100));
+
   return (
     <div className="mb-3 grid gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-lg shadow-slate-200/70 sm:grid-cols-2">
-      <div className="grid grid-cols-[minmax(0,2fr)_minmax(92px,0.75fr)] gap-2 sm:col-span-2">
-        <div className="rounded-lg bg-slate-950 px-5 py-3 text-white">
-          <p className="text-xs font-bold uppercase text-slate-400">Score</p>
-          <p className="text-3xl font-black leading-tight tabular-nums">{formatScore(score)}</p>
-        </div>
-        <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-          <p className="text-xs font-bold uppercase text-slate-500">Level</p>
-          <p className="text-2xl font-black tabular-nums">{level}</p>
-        </div>
-      </div>
       <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs font-bold uppercase text-slate-500">Hold</p>
@@ -88,17 +55,19 @@ export function GameHud({
           ))}
         </div>
       </div>
-      <div className="min-h-[76px] min-w-0">
-        {comboNotice ? (
-          <ComboFlash combo={comboNotice} />
-        ) : (
-          <div className="flex h-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-            <div>
-              <p className="text-xs font-bold uppercase text-slate-500">Combo</p>
-              <p className="mt-1 text-xl font-black text-slate-400">Ready</p>
-            </div>
-          </div>
-        )}
+      <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 sm:col-span-2">
+        <div className="flex items-end justify-between">
+          <p className="text-xs font-bold uppercase text-slate-500">pH</p>
+          <p className="text-xl font-black tabular-nums text-slate-950">{averagePh.toFixed(1)}</p>
+        </div>
+        <div className="relative mt-2 h-3 rounded-full bg-gradient-to-r from-rose-400 via-emerald-300 to-sky-500">
+          <span className="absolute top-1/2 h-5 w-2 rounded-full border border-white bg-slate-950 shadow-md" style={{ left: `${phPosition}%`, transform: "translate(-50%, -50%)" }} />
+        </div>
+        <div className="mt-1 flex justify-between text-[0.65rem] font-bold text-slate-500">
+          <span>acid</span>
+          <span>neutral</span>
+          <span>basic</span>
+        </div>
       </div>
     </div>
   );

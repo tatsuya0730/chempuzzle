@@ -1,24 +1,32 @@
-import type { EffectKind, ReactionLog } from "@/types/game";
+import type { ComboNotice, EffectKind, ReactionLog } from "@/types/game";
 import { formatScore } from "@/lib/game/scoring";
 import { EFFECT_STYLES } from "@/lib/game/tokens";
 
-const ACIDITY_LABELS: Record<ReactionLog["acidity"], string> = {
-  acidic: "酸性",
-  neutral: "中性",
-  basic: "塩基性",
-};
-
 const EFFECT_ORDER: EffectKind[] = ["clean", "toxic", "sleep", "energy", "reactive", "salt", "inert"];
 
-function ChemistryMeter({ reactionLog }: { reactionLog: ReactionLog[] }) {
-  const total = reactionLog.length;
-  const acidityCounts = reactionLog.reduce(
-    (counts, entry) => {
-      counts[entry.acidity] += 1;
-      return counts;
-    },
-    { acidic: 0, neutral: 0, basic: 0 },
+function ComboFlash({ combo }: { combo: ComboNotice }) {
+  const showCombo = combo.matchCount > 1;
+  const showChain = combo.chain > 1;
+
+  return (
+    <div key={combo.id} className="combo-flash rounded-lg border border-cyan-200 bg-cyan-950 px-4 py-3 text-white shadow-lg shadow-cyan-200/50">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-black uppercase text-cyan-200">{showChain ? `${combo.chain} Chain` : showCombo ? `${combo.matchCount} Combo` : "Reaction"}</p>
+          <p className="mt-1 text-xl font-black tabular-nums">+{formatScore(combo.gainedPoints)}</p>
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          {showChain && showCombo ? <p className="rounded-md bg-white/12 px-2 py-1 text-xs font-black">{combo.matchCount} Combo</p> : null}
+          {combo.bonusPoints > 0 ? <p className="rounded-md bg-white/12 px-2 py-1 text-xs font-black tabular-nums">Bonus +{formatScore(combo.bonusPoints)}</p> : null}
+        </div>
+      </div>
+      <p className="mt-2 truncate text-xs font-semibold text-cyan-100/85">{combo.formulas.join(" + ")}</p>
+    </div>
   );
+}
+
+function SideStatus({ score, level, reactionLog, comboNotice }: { score: number; level: number; reactionLog: ReactionLog[]; comboNotice: ComboNotice | null }) {
+  const total = reactionLog.length;
   const effectCounts = reactionLog.reduce(
     (counts, entry) => {
       counts[entry.effect] += 1;
@@ -26,48 +34,42 @@ function ChemistryMeter({ reactionLog }: { reactionLog: ReactionLog[] }) {
     },
     Object.fromEntries(EFFECT_ORDER.map((effect) => [effect, 0])) as Record<EffectKind, number>,
   );
-  const averagePh = total > 0 ? reactionLog.reduce((sum, entry) => sum + entry.ph, 0) / total : 7;
-  const phPosition = Math.max(0, Math.min(100, (averagePh / 14) * 100));
   const dominantEffect = EFFECT_ORDER.toSorted((a, b) => effectCounts[b] - effectCounts[a])[0];
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/70">
-      <div className="flex items-start justify-between gap-3">
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-lg bg-slate-950 px-4 py-3 text-white">
+          <p className="text-xs font-bold uppercase text-slate-400">Score</p>
+          <p className="text-3xl font-black leading-tight tabular-nums">{formatScore(score)}</p>
+        </div>
+        <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-xs font-bold uppercase text-slate-500">Level</p>
+          <p className="text-2xl font-black tabular-nums text-slate-950">{level}</p>
+        </div>
+      </div>
+
+      <div className="mt-3 min-h-[76px]">
+        {comboNotice ? (
+          <ComboFlash combo={comboNotice} />
+        ) : (
+          <div className="flex h-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+            <div>
+              <p className="text-xs font-bold uppercase text-slate-500">Combo</p>
+              <p className="mt-1 text-xl font-black text-slate-400">Ready</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-3 flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-black text-slate-950">pH / Attribute</h2>
+          <h2 className="text-sm font-black text-slate-950">Attribute</h2>
           <p className="mt-1 text-xs font-semibold text-slate-500">{total > 0 ? `${total} reactions analyzed` : "No reactions yet"}</p>
         </div>
         <span className={`rounded-md px-2 py-1 text-xs font-black ${total > 0 ? EFFECT_STYLES[dominantEffect].panel : "border border-slate-200 bg-slate-50 text-slate-500"}`}>
           {total > 0 ? EFFECT_STYLES[dominantEffect].tag : "待機"}
         </span>
-      </div>
-
-      <div className="mt-4">
-        <div className="flex items-end justify-between">
-          <p className="text-xs font-bold uppercase text-slate-500">Average pH</p>
-          <p className="text-2xl font-black tabular-nums text-slate-950">{averagePh.toFixed(1)}</p>
-        </div>
-        <div className="relative mt-2 h-3 rounded-full bg-gradient-to-r from-rose-400 via-emerald-300 to-sky-500">
-          <span className="absolute top-1/2 h-5 w-2 rounded-full border border-white bg-slate-950 shadow-md" style={{ left: `${phPosition}%`, transform: "translate(-50%, -50%)" }} />
-        </div>
-        <div className="mt-1 flex justify-between text-[0.65rem] font-bold text-slate-500">
-          <span>0 acid</span>
-          <span>7 neutral</span>
-          <span>14 basic</span>
-        </div>
-      </div>
-
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        {(["acidic", "neutral", "basic"] as const).map((acidity) => {
-          const count = acidityCounts[acidity];
-          const percent = total > 0 ? Math.round((count / total) * 100) : 0;
-          return (
-            <div key={acidity} className="rounded-lg border border-slate-200 bg-slate-50 p-2">
-              <p className="text-xs font-black text-slate-700">{ACIDITY_LABELS[acidity]}</p>
-              <p className="mt-1 text-lg font-black tabular-nums text-slate-950">{percent}%</p>
-            </div>
-          );
-        })}
       </div>
 
       <div className="mt-4 space-y-2">
@@ -89,10 +91,10 @@ function ChemistryMeter({ reactionLog }: { reactionLog: ReactionLog[] }) {
   );
 }
 
-export function ReactionHistory({ reactionLog }: { reactionLog: ReactionLog[] }) {
+export function ReactionHistory({ reactionLog, score, level, comboNotice }: { reactionLog: ReactionLog[]; score: number; level: number; comboNotice: ComboNotice | null }) {
   return (
     <aside className="flex min-h-0 flex-col gap-4">
-      <ChemistryMeter reactionLog={reactionLog} />
+      <SideStatus score={score} level={level} reactionLog={reactionLog} comboNotice={comboNotice} />
 
       <section className="min-h-0 rounded-lg border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/70">
         <div className="flex items-center justify-between gap-3">
