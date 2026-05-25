@@ -1,0 +1,518 @@
+"use client";
+
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import type { ComboNotice, ReactionLog, ResultSummary, TokenSymbol } from "@/types/game";
+import { CLEAR_DELAY, INITIAL_CURRENT, INITIAL_QUEUE, MAX_LOG } from "@/lib/game/config";
+import { getWeightedToken } from "@/lib/game/scoring";
+import { EFFECT_STYLES, TOKENS } from "@/lib/game/tokens";
+import { createAtomEntity, type PhysicsEntity, type PhysicsReaction, resolvePhysicsReaction } from "@/lib/game/physicsChemistry";
+
+export type PhysicsGameSnapshot = {
+  holdToken: TokenSymbol | null;
+  nextQueue: TokenSymbol[];
+  reactionLog: ReactionLog[];
+  comboNotice: ComboNotice | null;
+  score: number;
+  level: number;
+  gameOver: boolean;
+  isRunning: boolean;
+  canUseTokenAction: boolean;
+  resultSummary: ResultSummary;
+};
+
+export type PhysicsGameHandle = {
+  resetGame: () => void;
+  toggleRunning: () => void;
+  holdCurrent: () => void;
+  swapWithNext: () => void;
+};
+
+const WIDTH = 560;
+const HEIGHT = 640;
+const LEFT_WALL = 44;
+const RIGHT_WALL = WIDTH - 44;
+const DROP_Y = 62;
+
+type PhaserModule = typeof import("phaser");
+type MatterImage = Phaser.Physics.Matter.Image;
+type EntityRecord = PhysicsEntity & { body: MatterImage; label: Phaser.GameObjects.Text; bornAt: number };
+type MatterBodyWithGameObject = MatterJS.BodyType & {
+  gameObject?: Phaser.GameObjects.GameObject & { getData: (key: string) => unknown };
+};
+type CollisionEvent = {
+  pairs: Array<{
+    bodyA: MatterBodyWithGameObject;
+    bodyB: MatterBodyWithGameObject;
+  }>;
+};
+
+const TOKEN_COLORS: Record<TokenSymbol, { fill: number; stroke: number; text: string }> = {
+  H: { fill: 0xbae6fd, stroke: 0x0284c7, text: "#082f49" },
+  O: { fill: 0xfecdd3, stroke: 0xe11d48, text: "#4c0519" },
+  C: { fill: 0x27272a, stroke: 0x71717a, text: "#ffffff" },
+  N: { fill: 0xc7d2fe, stroke: 0x4f46e5, text: "#1e1b4b" },
+  P: { fill: 0xd9f99d, stroke: 0x65a30d, text: "#1a2e05" },
+  B: { fill: 0xfbcfe8, stroke: 0xdb2777, text: "#500724" },
+  F: { fill: 0xa7f3d0, stroke: 0x059669, text: "#022c22" },
+  S: { fill: 0xfef08a, stroke: 0xca8a04, text: "#422006" },
+  Cl: { fill: 0xbbf7d0, stroke: 0x16a34a, text: "#052e16" },
+  Na: { fill: 0xe7e5e4, stroke: 0x78716c, text: "#1c1917" },
+  Mg: { fill: 0xe2e8f0, stroke: 0x64748b, text: "#0f172a" },
+  Ca: { fill: 0xe5e5e5, stroke: 0x737373, text: "#171717" },
+  Fe: { fill: 0xfed7aa, stroke: 0xea580c, text: "#431407" },
+  Cu: { fill: 0xfcd34d, stroke: 0xd97706, text: "#451a03" },
+  Zn: { fill: 0xbfdbfe, stroke: 0x2563eb, text: "#172554" },
+  He: { fill: 0xddd6fe, stroke: 0x7c3aed, text: "#2e1065" },
+  Ne: { fill: 0xf5d0fe, stroke: 0xc026d3, text: "#4a044e" },
+  Ar: { fill: 0xe9d5ff, stroke: 0x9333ea, text: "#3b0764" },
+  Xe: { fill: 0x99f6e4, stroke: 0x0d9488, text: "#042f2e" },
+  Ph: { fill: 0x164e63, stroke: 0x06b6d4, text: "#ecfeff" },
+  Fire: { fill: 0xf97316, stroke: 0xef4444, text: "#fff7ed" },
+};
+
+const initialSnapshot: PhysicsGameSnapshot = {
+  holdToken: null,
+  nextQueue: INITIAL_QUEUE,
+  reactionLog: [],
+  comboNotice: null,
+  score: 0,
+  level: 1,
+  gameOver: false,
+  isRunning: false,
+  canUseTokenAction: false,
+  resultSummary: { score: 0, reactionCount: 0, acidic: 0, neutral: 0, basic: 0, dominant: "none" },
+};
+
+const summarizeResult = (score: number, reactionLog: ReactionLog[]): ResultSummary => {
+  const acidic = reactionLog.filter((entry) => entry.acidity === "acidic").length;
+  const neutral = reactionLog.filter((entry) => entry.acidity === "neutral").length;
+  const basic = reactionLog.filter((entry) => entry.acidity === "basic").length;
+  const dominant = reactionLog.length === 0 ? "none" : acidic >= neutral && acidic >= basic ? "acidic" : basic >= neutral ? "basic" : "neutral";
+  return { score, reactionCount: reactionLog.length, acidic, neutral, basic, dominant };
+};
+
+function createTexture(scene: Phaser.Scene, PhaserRuntime: PhaserModule, key: string, entity: Omit<PhysicsEntity, "id">) {
+  if (scene.textures.exists(key)) return;
+  const color = TOKEN_COLORS[entity.atoms[0]] ?? TOKEN_COLORS.H;
+  const size = entity.radius * 2 + 14;
+  const center = size / 2;
+  const graphics = scene.add.graphics();
+  graphics.fillStyle(color.fill, 1);
+  graphics.lineStyle(entity.kind === "atom" ? 4 : 5, entity.kind === "fragment" ? 0xfacc15 : color.stroke, 1);
+  if (entity.formula === "Ph") {
+    const points = [];
+    for (let index = 0; index < 6; index += 1) {
+      const angle = -Math.PI / 2 + (Math.PI * 2 * index) / 6;
+      points.push(new PhaserRuntime.Math.Vector2(center + Math.cos(angle) * entity.radius, center + Math.sin(angle) * entity.radius));
+    }
+    graphics.fillPoints(points, true);
+    graphics.strokePoints(points, true);
+    graphics.lineStyle(3, 0xecfeff, 0.86);
+    graphics.strokeCircle(center, center, entity.radius * 0.48);
+  } else {
+    graphics.fillCircle(center, center, entity.radius);
+    graphics.strokeCircle(center, center, entity.radius);
+    if (entity.kind !== "atom") {
+      graphics.lineStyle(2, 0xffffff, 0.74);
+      graphics.strokeCircle(center, center, entity.radius - 7);
+    }
+  }
+  graphics.generateTexture(key, size, size);
+  graphics.destroy();
+}
+
+export const PhysicsChemPuzzle = forwardRef<PhysicsGameHandle, { onSnapshot: (snapshot: PhysicsGameSnapshot) => void }>(function PhysicsChemPuzzle({ onSnapshot }, ref) {
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const sceneRef = useRef<PhysicsGameHandle | null>(null);
+  const snapshotRef = useRef(onSnapshot);
+
+  snapshotRef.current = onSnapshot;
+
+  useImperativeHandle(ref, () => ({
+    resetGame: () => sceneRef.current?.resetGame(),
+    toggleRunning: () => sceneRef.current?.toggleRunning(),
+    holdCurrent: () => sceneRef.current?.holdCurrent(),
+    swapWithNext: () => sceneRef.current?.swapWithNext(),
+  }));
+
+  useEffect(() => {
+    let game: Phaser.Game | null = null;
+    let destroyed = false;
+
+    async function boot() {
+      const Phaser = await import("phaser");
+      if (destroyed || !hostRef.current) return;
+
+      class ChemPuzzleScene extends Phaser.Scene {
+        entities = new Map<number, EntityRecord>();
+        nextId = 0;
+        score = 0;
+        level = 1;
+        running = false;
+        gameOver = false;
+        holdToken: TokenSymbol | null = null;
+        nextQueue: TokenSymbol[] = [...INITIAL_QUEUE];
+        currentId: number | null = null;
+        tokenActionUsed = false;
+        releaseTimer: number | null = null;
+        reactionLog: ReactionLog[] = [];
+        comboNotice: ComboNotice | null = null;
+        logId = 0;
+        comboId = 0;
+        combining = new Set<number>();
+        dropX = WIDTH / 2;
+
+        create() {
+          this.matter.world.setBounds(LEFT_WALL, 0, RIGHT_WALL - LEFT_WALL, HEIGHT, 42, true, true, false, true);
+          this.matter.world.drawDebug = false;
+          this.matter.world.debugGraphic?.clear();
+          this.matter.world.setGravity(0, 1.05);
+          this.createBeaker();
+          this.input.keyboard?.on("keydown-LEFT", () => this.nudgeCurrent(-1));
+          this.input.keyboard?.on("keydown-A", () => this.nudgeCurrent(-1));
+          this.input.keyboard?.on("keydown-RIGHT", () => this.nudgeCurrent(1));
+          this.input.keyboard?.on("keydown-D", () => this.nudgeCurrent(1));
+          this.input.keyboard?.on("keydown-DOWN", () => this.softDrop());
+          this.input.keyboard?.on("keydown-S", () => this.softDrop());
+          this.input.keyboard?.on("keydown-SPACE", () => this.hardDrop());
+          this.input.keyboard?.on("keydown-ENTER", () => this.toggleRunning());
+          this.input.keyboard?.on("keydown-C", () => this.holdCurrent());
+          this.input.keyboard?.on("keydown-X", () => this.swapWithNext());
+          this.matter.world.on("collisionstart", (event: CollisionEvent) => this.handleCollision(event));
+          sceneRef.current = this;
+          this.spawnSpecific(INITIAL_CURRENT, this.dropX, DROP_Y, true);
+          this.matter.world.pause();
+          this.emitSnapshot();
+        }
+
+        createBeaker() {
+          const bg = this.add.graphics();
+          bg.fillStyle(0xf8fafc, 1);
+          bg.fillRect(0, 0, WIDTH, HEIGHT);
+          bg.fillStyle(0xf8fafc, 0.92);
+          bg.fillRect(18, 8, WIDTH - 36, HEIGHT - 18);
+          bg.fillStyle(0xbae6fd, 0.22);
+          bg.fillRect(38, 56, WIDTH - 76, HEIGHT - 104);
+          bg.lineStyle(8, 0x0e7490, 0.42);
+          bg.strokeRect(22, 20, WIDTH - 44, HEIGHT - 32);
+          bg.lineStyle(2, 0xffffff, 0.7);
+          bg.strokeRect(36, 34, WIDTH - 72, HEIGHT - 62);
+          bg.fillStyle(0xffffff, 0.24);
+          bg.fillRect(WIDTH - 90, 54, 18, HEIGHT - 150);
+        }
+
+        emitSnapshot() {
+          snapshotRef.current({
+            holdToken: this.holdToken,
+            nextQueue: [...this.nextQueue],
+            reactionLog: [...this.reactionLog],
+            comboNotice: this.comboNotice,
+            score: this.score,
+            level: this.level,
+            gameOver: this.gameOver,
+            isRunning: this.running,
+            canUseTokenAction: this.running && !this.gameOver && this.currentId !== null && !this.tokenActionUsed,
+            resultSummary: summarizeResult(this.score, this.reactionLog),
+          });
+        }
+
+        resetGame() {
+          this.entities.forEach((entity) => {
+            entity.label.destroy();
+            entity.body.destroy();
+          });
+          this.entities.clear();
+          this.score = 0;
+          this.level = 1;
+          this.running = true;
+          this.gameOver = false;
+          this.holdToken = null;
+          this.nextQueue = [...INITIAL_QUEUE];
+          this.currentId = null;
+          this.tokenActionUsed = false;
+          this.reactionLog = [];
+          this.comboNotice = null;
+          this.combining.clear();
+          this.spawnSpecific(getWeightedToken(1), this.dropX, DROP_Y, true);
+          this.matter.world.resume();
+          this.emitSnapshot();
+        }
+
+        toggleRunning() {
+          if (this.gameOver) {
+            this.resetGame();
+            return;
+          }
+          this.running = !this.running;
+          if (this.running) this.matter.world.resume();
+          else this.matter.world.pause();
+          this.emitSnapshot();
+        }
+
+        spawnNext() {
+          if (this.gameOver || this.currentId !== null) return;
+          const [token, ...rest] = this.nextQueue;
+          this.nextQueue = [...rest, getWeightedToken(this.level)];
+          this.tokenActionUsed = false;
+          this.spawnSpecific(token, this.dropX, DROP_Y, true);
+          this.emitSnapshot();
+        }
+
+        spawnSpecific(token: TokenSymbol, x: number, y: number, controlled = false) {
+          const entity = createAtomEntity(token);
+          return this.spawnEntity(entity, x, y, controlled);
+        }
+
+        spawnEntity(entity: Omit<PhysicsEntity, "id">, x: number, y: number, controlled = false) {
+          const id = ++this.nextId;
+          const key = `chem-${entity.formula}-${entity.kind}-${entity.radius}`;
+          createTexture(this, Phaser, key, entity);
+          const body = this.matter.add.image(x, y, key);
+          body.setCircle(entity.radius);
+          body.setFriction(0.08);
+          body.setFrictionAir(0.006);
+          body.setBounce(0.16);
+          body.setData("entityId", id);
+          const label = this.add.text(x, y, entity.formula === "Ph" ? "" : entity.formula, {
+            fontFamily: "Arial, Helvetica, sans-serif",
+            fontSize: `${Math.max(11, Math.min(19, entity.radius * 0.54))}px`,
+            fontStyle: "900",
+            color: TOKEN_COLORS[entity.atoms[0]]?.text ?? "#0f172a",
+            align: "center",
+          });
+          label.setOrigin(0.5);
+          label.setDepth(20);
+          body.setDepth(10);
+          this.entities.set(id, { ...entity, id, body, label, bornAt: this.time.now });
+          if (controlled) this.currentId = id;
+          return id;
+        }
+
+        releaseCurrent(delay = 680) {
+          if (this.currentId === null || this.releaseTimer !== null) return;
+          this.currentId = null;
+          this.releaseTimer = window.setTimeout(() => {
+            this.releaseTimer = null;
+            if (this.running) this.spawnNext();
+          }, delay);
+          this.emitSnapshot();
+        }
+
+        nudgeCurrent(direction: -1 | 1) {
+          if (!this.running || this.gameOver || this.currentId === null) return;
+          const entity = this.entities.get(this.currentId);
+          if (!entity) return;
+          entity.body.setVelocityX(direction * 4.4);
+          entity.body.setAngularVelocity(direction * 0.035);
+          this.dropX = Math.max(LEFT_WALL + 38, Math.min(RIGHT_WALL - 38, entity.body.x + direction * 24));
+        }
+
+        softDrop() {
+          if (!this.running || this.gameOver || this.currentId === null) return;
+          this.entities.get(this.currentId)?.body.setVelocityY(8);
+        }
+
+        hardDrop() {
+          if (!this.running || this.gameOver || this.currentId === null) return;
+          this.entities.get(this.currentId)?.body.setVelocityY(15);
+          this.releaseCurrent(420);
+        }
+
+        holdCurrent() {
+          if (!this.running || this.gameOver || this.currentId === null || this.tokenActionUsed) return;
+          const current = this.entities.get(this.currentId);
+          if (!current || current.kind !== "atom") return;
+          const currentToken = current.atoms[0];
+          const replacement = this.holdToken ?? this.nextQueue[0];
+          if (!replacement) return;
+          if (this.holdToken === null) {
+            const [, ...rest] = this.nextQueue;
+            this.nextQueue = [...rest, getWeightedToken(this.level)];
+          }
+          this.holdToken = currentToken;
+          const { x, y } = current.body;
+          this.removeEntity(current.id);
+          this.spawnSpecific(replacement, x, y, true);
+          this.tokenActionUsed = true;
+          this.emitSnapshot();
+        }
+
+        swapWithNext() {
+          if (!this.running || this.gameOver || this.currentId === null || this.tokenActionUsed) return;
+          const current = this.entities.get(this.currentId);
+          const [nextToken, ...rest] = this.nextQueue;
+          if (!current || current.kind !== "atom" || !nextToken) return;
+          const currentToken = current.atoms[0];
+          const { x, y } = current.body;
+          this.nextQueue = [currentToken, ...rest];
+          this.removeEntity(current.id);
+          this.spawnSpecific(nextToken, x, y, true);
+          this.tokenActionUsed = true;
+          this.emitSnapshot();
+        }
+
+        removeEntity(id: number) {
+          const entity = this.entities.get(id);
+          if (!entity) return;
+          entity.label.destroy();
+          entity.body.destroy();
+          this.entities.delete(id);
+          this.combining.delete(id);
+          if (this.currentId === id) this.currentId = null;
+        }
+
+        handleCollision(event: CollisionEvent) {
+          if (!this.running || this.gameOver) return;
+          for (const pair of event.pairs) {
+            const firstId = this.getEntityId(pair.bodyA);
+            const secondId = this.getEntityId(pair.bodyB);
+            if (!firstId || !secondId || firstId === secondId) continue;
+            if (firstId === this.currentId || secondId === this.currentId) this.releaseCurrent();
+            if (this.combining.has(firstId) || this.combining.has(secondId)) continue;
+            const first = this.entities.get(firstId);
+            const second = this.entities.get(secondId);
+            if (!first || !second) continue;
+            const reaction = resolvePhysicsReaction(first, second);
+            if (!reaction) continue;
+            this.combining.add(firstId);
+            this.combining.add(secondId);
+            this.time.delayedCall(80, () => this.applyReaction(firstId, secondId, reaction));
+          }
+        }
+
+        getEntityId(body: MatterBodyWithGameObject) {
+          const value = body.gameObject?.getData("entityId");
+          return typeof value === "number" ? value : null;
+        }
+
+        applyReaction(firstId: number, secondId: number, reaction: PhysicsReaction) {
+          const first = this.entities.get(firstId);
+          const second = this.entities.get(secondId);
+          if (!first || !second) return;
+          const x = (first.body.x + second.body.x) / 2;
+          const y = (first.body.y + second.body.y) / 2;
+          this.removeEntity(firstId);
+          this.removeEntity(secondId);
+          if (reaction.type === "cluster") {
+            this.spawnEntity(reaction.entity, x, y);
+            this.flash(x, y, 0x22d3ee);
+            this.emitSnapshot();
+            return;
+          }
+          if (reaction.type === "burst") {
+            this.clearNear(x, y, 92);
+            this.score += reaction.points;
+            this.flash(x, y, 0xfb923c);
+            this.comboNotice = { id: ++this.comboId, chain: 1, matchCount: 1, bonusPoints: 0, gainedPoints: reaction.points, formulas: reaction.formulas };
+            this.time.delayedCall(CLEAR_DELAY + 520, () => {
+              this.comboNotice = null;
+              this.emitSnapshot();
+            });
+            this.emitSnapshot();
+            return;
+          }
+          const molecule = reaction.molecule;
+          this.score += reaction.points;
+          this.level = Math.min(20, this.level + 1);
+          this.reactionLog = [
+            {
+              id: ++this.logId,
+              formula: molecule.formula,
+              name: molecule.name,
+              property: molecule.property,
+              effect: molecule.effect,
+              ph: molecule.ph,
+              acidity: molecule.acidity,
+              count: molecule.nodes.length,
+              points: reaction.points,
+              imageUrl: molecule.imageUrl,
+            },
+            ...this.reactionLog,
+          ].slice(0, MAX_LOG);
+          this.comboNotice = { id: ++this.comboId, chain: 1, matchCount: 1, bonusPoints: 0, gainedPoints: reaction.points, formulas: reaction.formulas };
+          this.flash(x, y, Number(`0x${EFFECT_STYLES[molecule.effect].stroke.slice(1)}`));
+          this.time.delayedCall(CLEAR_DELAY + 520, () => {
+            this.comboNotice = null;
+            this.emitSnapshot();
+          });
+          this.emitSnapshot();
+        }
+
+        clearNear(x: number, y: number, radius: number) {
+          const targets = [...this.entities.values()].filter((entity) => {
+            if (entity.atoms.every((atom) => TOKENS[atom].category === "noble")) return false;
+            return Phaser.Math.Distance.Between(x, y, entity.body.x, entity.body.y) < radius;
+          });
+          targets.forEach((entity) => this.removeEntity(entity.id));
+        }
+
+        flash(x: number, y: number, color: number) {
+          const burst = this.add.circle(x, y, 12, color, 0.34);
+          burst.setDepth(30);
+          this.tweens.add({
+            targets: burst,
+            radius: 92,
+            alpha: 0,
+            duration: 420,
+            ease: "Cubic.easeOut",
+            onComplete: () => burst.destroy(),
+          });
+        }
+
+        update() {
+          this.entities.forEach((entity) => {
+            entity.label.setPosition(entity.body.x, entity.body.y);
+            entity.label.setRotation(0);
+            const velocityY = entity.body.body?.velocity.y ?? 0;
+            if (!this.gameOver && entity.id !== this.currentId && this.time.now - entity.bornAt > 1200 && entity.body.y < 74 && Math.abs(velocityY) < 0.8) {
+              this.gameOver = true;
+              this.running = false;
+              this.matter.world.pause();
+              this.emitSnapshot();
+            }
+            if (entity.id === this.currentId && entity.body.y > 150 && Math.abs(velocityY) < 0.55) {
+              this.releaseCurrent();
+            }
+          });
+        }
+      }
+
+      game = new Phaser.Game({
+        type: Phaser.AUTO,
+        width: WIDTH,
+        height: HEIGHT,
+        parent: hostRef.current,
+        backgroundColor: "#f8fafc",
+        physics: {
+          default: "matter",
+          matter: {
+            debug: false,
+            gravity: { x: 0, y: 1.05 },
+          },
+        },
+        scale: {
+          mode: Phaser.Scale.FIT,
+          autoCenter: Phaser.Scale.CENTER_BOTH,
+        },
+        scene: ChemPuzzleScene,
+      });
+    }
+
+    boot();
+
+    return () => {
+      destroyed = true;
+      sceneRef.current = null;
+      if (game) game.destroy(true);
+      snapshotRef.current(initialSnapshot);
+    };
+  }, []);
+
+  return (
+    <div className="beaker-frame physics-beaker flex w-full items-center justify-center overflow-hidden p-3">
+      <div ref={hostRef} className="h-[640px] w-full max-w-[560px]" />
+    </div>
+  );
+});
+
+export { initialSnapshot as INITIAL_PHYSICS_GAME_SNAPSHOT };
