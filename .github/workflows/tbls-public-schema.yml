@@ -1,4 +1,4 @@
-name: Export public schema
+name: Generate DB Docs with tbls
 
 on:
   workflow_dispatch:
@@ -7,28 +7,40 @@ on:
     - cron: "0 0 * * *"
 
 jobs:
-  tbls:
-    name: tbls public schema
+  generate-db-docs:
     runs-on: ubuntu-latest
-    env:
-      TBLS_DSN: ${{ secrets.SUPABASE_DATABASE_URL }}
-      TBLS_DOC_PATH: docs/db/schema
+    timeout-minutes: 10
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Validate database URL
-        run: test -n "$TBLS_DSN"
-
-      - name: Set up tbls
-        uses: k1LoW/setup-tbls@v1
-
-      - name: Export public schema docs
-        run: tbls doc
-
-      - name: Upload schema docs
-        uses: actions/upload-artifact@v4
+      - name: Checkout develop
+        uses: actions/checkout@v6
         with:
-          name: tbls-public-schema
-          path: docs/db/schema
+          ref: develop
+          fetch-depth: 0
+
+      - name: Setup tbls
+        uses: k1low/setup-tbls@v1
+
+      - name: Generate DB docs
+        run: tbls doc --rm-dist
+        env:
+          SUPABASE_DOCS_DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
+
+      - name: Commit docs to update branch
+        run: |
+          if [ -z "$(git status --porcelain -- docs/db)" ]; then
+            echo "No changes in docs/db"
+            exit 0
+          fi
+
+          DATETIME="$(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M:%S JST')"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git checkout -B tbls/update-db-docs
+
+          git add docs/db
+          git commit -m "docs: update tbls database docs (${DATETIME})"
+
+          git push --force-with-lease origin tbls/update-db-docs
