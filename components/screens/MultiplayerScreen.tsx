@@ -1,61 +1,33 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import type { Grid } from "@/types/game";
-import { createEmptyGrid, makeTile } from "@/lib/game/board";
-import { BOARD_WIDTH } from "@/lib/game/config";
-import { GameBoard } from "@/components/game/GameBoard";
+import { useRef, useState } from "react";
+import { GameDisplaySettings } from "@/components/game/GameDisplaySettings";
 import { GameHud } from "@/components/game/GameHud";
-import { ReactionHistory } from "@/components/game/ReactionHistory";
+import { INITIAL_PHYSICS_GAME_SNAPSHOT, PhysicsChemPuzzle, type PhysicsGameHandle } from "@/components/game/PhysicsChemPuzzle";
+import { FormedMoleculesHistory, GameStatusPanel, MoleculeGrowthList } from "@/components/game/ReactionHistory";
 import { ResultModal } from "@/components/game/ResultModal";
-import { useChemPuzzleGame } from "@/lib/game/useChemPuzzleGame";
+import { useGameDisplaySettings } from "@/components/game/useGameDisplaySettings";
+import { useAtomSelection } from "@/components/game/useAtomSelection";
 
-function createOpponentGrid(): Grid {
-  const grid = createEmptyGrid();
-  const placements = [
-    [9, 3, "C"],
-    [9, 4, "O"],
-    [10, 2, "H"],
-    [10, 3, "O"],
-    [10, 4, "H"],
-    [11, 2, "Na"],
-    [11, 3, "Cl"],
-    [11, 5, "N"],
-    [12, 2, "S"],
-    [12, 3, "O"],
-    [12, 4, "O"],
-    [12, 5, "F"],
-    [8, 4, "Fire"],
-  ] as const;
-
-  placements.forEach(([row, col, token]) => {
-    grid[row][col] = { token, hands: [] };
-  });
-
-  return grid;
-}
-
-function BoardColumn({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
+function BoardColumn({ title, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
     <section className="min-w-0">
       <div className="mb-2 flex items-center justify-between border-b border-slate-200 pb-2">
         <p className="text-base font-black text-slate-950">{title}</p>
-        <p className="text-xs font-semibold text-slate-500">{subtitle}</p>
       </div>
-      <div className="mx-auto w-full" style={{ maxWidth: `${BOARD_WIDTH + 72}px` }}>
-        {children}
-      </div>
+      <div className="mx-auto w-full max-w-[632px]">{children}</div>
     </section>
   );
 }
 
 export function MultiplayerScreen() {
-  const game = useChemPuzzleGame();
+  const gameRef = useRef<PhysicsGameHandle | null>(null);
+  const [game, setGame] = useState(INITIAL_PHYSICS_GAME_SNAPSHOT);
+  const { enabledAtoms } = useAtomSelection();
+  const { showMoleculeHints, showAtomicNumbers, setShowMoleculeHints, setShowAtomicNumbers } = useGameDisplaySettings();
   const [password, setPassword] = useState("");
   const [joined, setJoined] = useState(false);
   const [passwordError, setPasswordError] = useState("");
-  const opponentGrid = useMemo(() => createOpponentGrid(), []);
-  const opponentCurrent = useMemo(() => makeTile("Xe"), []);
 
   if (!joined) {
     return (
@@ -101,8 +73,8 @@ export function MultiplayerScreen() {
               <p className="mt-1 text-lg font-black text-slate-950">1v1</p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <p className="text-xs font-black text-slate-500">Gimmick</p>
-              <p className="mt-1 text-lg font-black text-slate-950">Water / Fire</p>
+              <p className="text-xs font-black text-slate-500">Rules</p>
+              <p className="mt-1 text-lg font-black text-slate-950">Physics</p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
               <p className="text-xs font-black text-slate-500">Room</p>
@@ -123,10 +95,10 @@ export function MultiplayerScreen() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <span className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-black text-emerald-950">Room: Private</span>
-          <button type="button" onClick={game.toggleRunning} className="min-w-28 rounded-lg bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-300">
+          <button type="button" onClick={() => gameRef.current?.toggleRunning()} className="min-w-28 rounded-lg bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-300">
             {game.gameOver ? "Restart" : game.isRunning ? "Stop" : "Start"}
           </button>
-          <button type="button" onClick={game.resetGame} className="rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-800">
+          <button type="button" onClick={() => gameRef.current?.resetGame()} className="rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-800">
             Reset
           </button>
         </div>
@@ -139,13 +111,20 @@ export function MultiplayerScreen() {
             nextQueue={game.nextQueue}
             reactionLog={game.reactionLog}
             canUseTokenAction={game.canUseTokenAction}
-            onHold={game.holdCurrent}
-            onSwapNext={game.swapWithNext}
+            onHold={() => gameRef.current?.holdCurrent()}
+            onSwapNext={() => gameRef.current?.swapWithNext()}
           />
-          <GameBoard displayGrid={game.displayGrid} current={game.current} predictedLanding={game.predictedLanding} clearing={game.clearing} clearingMatches={game.clearingMatches} />
+          <PhysicsChemPuzzle key={enabledAtoms.join("-")} ref={gameRef} enabledAtoms={enabledAtoms} showMoleculeHints={showMoleculeHints} showAtomicNumbers={showAtomicNumbers} onSnapshot={setGame} />
+          <GameDisplaySettings showMoleculeHints={showMoleculeHints} showAtomicNumbers={showAtomicNumbers} onToggleMoleculeHints={setShowMoleculeHints} onToggleAtomicNumbers={setShowAtomicNumbers} />
+          <div className="mt-4">
+            <MoleculeGrowthList enabledAtoms={enabledAtoms} />
+          </div>
         </BoardColumn>
 
-        <ReactionHistory reactionLog={game.reactionLog} score={game.score} level={game.level} comboNotice={game.comboNotice} />
+        <aside className="flex min-h-0 flex-col gap-4 xl:h-[790px]">
+          <GameStatusPanel score={game.score} level={game.level} reactionLog={game.reactionLog} comboNotice={game.comboNotice} maxCombo={game.maxCombo} />
+          <FormedMoleculesHistory reactionLog={game.reactionLog} className="flex-1" />
+        </aside>
 
         <BoardColumn title="Opponent" subtitle="相手の盤面プレビュー">
           <div className="mb-3 grid grid-cols-2 gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-lg shadow-slate-200/60">
@@ -158,11 +137,16 @@ export function MultiplayerScreen() {
               <p className="text-xl font-black text-emerald-700">Live</p>
             </div>
           </div>
-          <GameBoard displayGrid={opponentGrid} current={opponentCurrent} predictedLanding={{ row: -1, col: 0 }} clearing={new Map()} clearingMatches={[]} />
+          <div className="beaker-frame physics-beaker flex min-h-[690px] items-center justify-center p-6">
+            <div className="rounded-lg border border-dashed border-cyan-200 bg-white/70 px-5 py-4 text-center shadow-lg shadow-cyan-100/50">
+              <p className="text-sm font-black text-slate-950">Physics sync standby</p>
+              <p className="mt-2 text-xs font-semibold leading-5 text-slate-500">相手のPhaser/Matter盤面はリアルタイム同期実装時にここへ表示します。</p>
+            </div>
+          </div>
         </BoardColumn>
       </section>
 
-      <ResultModal gameOver={game.gameOver} result={game.resultSummary} onRestart={game.resetGame} />
+      <ResultModal gameOver={game.gameOver} result={game.resultSummary} onRestart={() => gameRef.current?.resetGame()} />
     </div>
   );
 }

@@ -1,55 +1,63 @@
 "use client";
 
-import { BOARD_WIDTH } from "@/lib/game/config";
-import { useChemPuzzleGame } from "@/lib/game/useChemPuzzleGame";
-import { GameBoard } from "@/components/game/GameBoard";
+import { useRef, useState } from "react";
+import { GameDisplaySettings } from "@/components/game/GameDisplaySettings";
 import { GameHud } from "@/components/game/GameHud";
-import { ReactionHistory } from "@/components/game/ReactionHistory";
+import { INITIAL_PHYSICS_GAME_SNAPSHOT, PhysicsChemPuzzle, type PhysicsGameHandle } from "@/components/game/PhysicsChemPuzzle";
+import { FormedMoleculesHistory, GameStatusPanel, MoleculeGrowthList } from "@/components/game/ReactionHistory";
 import { ResultModal } from "@/components/game/ResultModal";
 import { SiteFooter } from "@/components/game/SiteFooter";
 import { SiteHeader } from "@/components/game/SiteHeader";
+import { useGameDisplaySettings } from "@/components/game/useGameDisplaySettings";
+import { useAtomSelection } from "@/components/game/useAtomSelection";
 
 export function SoloPlayScreen() {
-  const game = useChemPuzzleGame();
+  const gameRef = useRef<PhysicsGameHandle | null>(null);
+  const [game, setGame] = useState(INITIAL_PHYSICS_GAME_SNAPSHOT);
+  const { showMoleculeHints, showAtomicNumbers, setShowMoleculeHints, setShowAtomicNumbers } = useGameDisplaySettings();
+  const { enabledAtoms } = useAtomSelection();
 
   return (
     <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-4 px-4 py-3 sm:px-6 lg:px-8">
-      <SiteHeader title="Single Play" subtitle="水と炎のギミックを使う個人プレイ" gameOver={game.gameOver} isRunning={game.isRunning} onReset={game.resetGame} onToggleRunning={game.toggleRunning} />
+      <div className="w-full max-w-[620px]">
+        <SiteHeader title="Single Play" gameOver={game.gameOver} isRunning={game.isRunning} onReset={() => gameRef.current?.resetGame()} onToggleRunning={() => gameRef.current?.toggleRunning()} />
+      </div>
 
       <section className="grid flex-1 gap-5 xl:grid-cols-[minmax(0,620px)_360px]">
         <div className="flex min-h-0 flex-col">
-          <div className="mx-auto w-full" style={{ maxWidth: `${BOARD_WIDTH + 72}px` }}>
+          <div className="mx-auto w-full max-w-[632px]">
             <GameHud
               holdToken={game.holdToken}
               nextQueue={game.nextQueue}
               reactionLog={game.reactionLog}
               canUseTokenAction={game.canUseTokenAction}
-              onHold={game.holdCurrent}
-              onSwapNext={game.swapWithNext}
+              onHold={() => gameRef.current?.holdCurrent()}
+              onSwapNext={() => gameRef.current?.swapWithNext()}
             />
-            <GameBoard
-              displayGrid={game.displayGrid}
-              current={game.current}
-              predictedLanding={game.predictedLanding}
-              clearing={game.clearing}
-              clearingMatches={game.clearingMatches}
-            />
+            <PhysicsChemPuzzle key={enabledAtoms.join("-")} ref={gameRef} enabledAtoms={enabledAtoms} showMoleculeHints={showMoleculeHints} showAtomicNumbers={showAtomicNumbers} onSnapshot={setGame} />
             <div className="mt-3 grid gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-600 shadow-lg shadow-slate-200/60 sm:grid-cols-3">
               <p className="font-black uppercase text-slate-500">Controls</p>
-              <p>← / A 右左移動</p>
-              <p>↓ / S ソフトドロップ</p>
-              <p>Space ハードドロップ / Enter Start</p>
+              <p>マウス移動 投下位置</p>
+              <p>クリック 落下</p>
+              <p>← / → 微調整</p>
               <p>C ホールド</p>
               <p>X Next交換</p>
+            </div>
+            <GameDisplaySettings showMoleculeHints={showMoleculeHints} showAtomicNumbers={showAtomicNumbers} onToggleMoleculeHints={setShowMoleculeHints} onToggleAtomicNumbers={setShowAtomicNumbers} />
+            <div className="mt-4">
+              <MoleculeGrowthList enabledAtoms={enabledAtoms} />
             </div>
           </div>
         </div>
 
-        <ReactionHistory reactionLog={game.reactionLog} score={game.score} level={game.level} comboNotice={game.comboNotice} />
+        <aside className="flex min-h-0 flex-col gap-4 xl:h-[790px]">
+          <GameStatusPanel score={game.score} level={game.level} reactionLog={game.reactionLog} comboNotice={game.comboNotice} maxCombo={game.maxCombo} />
+          <FormedMoleculesHistory reactionLog={game.reactionLog} className="flex-1" />
+        </aside>
       </section>
 
       <SiteFooter />
-      <ResultModal gameOver={game.gameOver} result={game.resultSummary} onRestart={game.resetGame} />
+      <ResultModal gameOver={game.gameOver} result={game.resultSummary} onRestart={() => gameRef.current?.resetGame()} />
     </div>
   );
 }

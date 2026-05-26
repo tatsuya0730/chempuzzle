@@ -1,14 +1,24 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 const NAV_ITEMS = [
+  { href: "/ranking", label: "ランキング", short: "Rank", icon: "♕" },
   { href: "/tutorial", label: "チュートリアル", short: "Tips" },
-  { href: "/play", label: "シングルプレイ", short: "Solo" },
-  { href: "/multiplayer", label: "マルチプレイ", short: "Multi" },
-  { href: "/ranking", label: "ランキング", short: "Rank" },
+];
+
+const PLAY_ITEMS = [
+  { href: "/play", label: "通常プレイ", short: "Normal" },
+  { href: "/play/challenge", label: "お題分子", short: "Task" },
+  { href: "/play/explore", label: "分子探索", short: "Dex" },
+];
+
+const MULTIPLAYER_ITEMS = [
+  { href: "/multiplayer/create", label: "部屋を作る", short: "Make" },
+  { href: "/multiplayer/find", label: "部屋を探す", short: "Find" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -21,14 +31,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <aside className="relative border-r border-slate-200 bg-white shadow-xl shadow-slate-200/70">
           <div className="sticky top-0 flex h-screen flex-col gap-4 p-3">
             <div className="flex items-center justify-between gap-2">
-              <Link href="/play" className="min-w-0">
-                <p className={`font-black leading-none text-slate-950 ${collapsed ? "text-xl" : "text-2xl"}`}>{collapsed ? "CP" : "ChemPuzzle"}</p>
-                {collapsed ? null : <p className="mt-1 text-xs font-semibold text-slate-500">reaction arena</p>}
+              <Link href="/play" className={`flex min-w-0 items-center gap-2 ${collapsed ? "justify-center" : ""}`} title="ChemPuzzle">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-sm">
+                  <Image src="/icon.png" alt="" width={40} height={40} className="h-10 w-10 object-contain" priority unoptimized />
+                </span>
+                {collapsed ? null : (
+                  <span className="min-w-0">
+                    <span className="block text-2xl font-black leading-none text-slate-950">ChemPuzzle</span>
+                    <span className="mt-1 block text-xs font-semibold text-slate-500">reaction arena</span>
+                  </span>
+                )}
               </Link>
               <button
                 type="button"
                 onClick={() => setCollapsed((value) => !value)}
-                className="absolute -right-3 top-5 z-10 flex h-10 w-6 items-center justify-center rounded-r-lg border border-l-0 border-slate-200 bg-slate-950 text-xs font-black text-white shadow-lg shadow-slate-300"
+                className="absolute -right-3 top-1/2 z-20 flex h-12 w-6 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-xs font-black text-slate-500 shadow-lg shadow-slate-300 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700"
                 aria-label={collapsed ? "サイドバーを開く" : "サイドバーを畳む"}
               >
                 {collapsed ? ">" : "<"}
@@ -47,10 +64,46 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     } ${collapsed ? "text-center" : ""}`}
                     title={item.label}
                   >
-                    {collapsed ? item.short : item.label}
+                    {collapsed ? item.short : <span className="flex items-center gap-2">{item.icon ? <span aria-hidden="true">{item.icon}</span> : null}{item.label}</span>}
                   </Link>
                 );
               })}
+              <div className={collapsed ? "grid gap-1" : "grid gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2"}>
+                {collapsed ? null : <p className="px-2 pb-1 text-xs font-black uppercase text-slate-400">シングルプレイ</p>}
+                {PLAY_ITEMS.map((item) => {
+                  const active = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`rounded-lg px-3 py-2 text-sm font-black transition ${
+                        active ? "bg-slate-950 text-white shadow-lg shadow-slate-300" : "text-slate-600 hover:bg-white hover:text-slate-950"
+                      } ${collapsed ? "text-center text-xs" : ""}`}
+                      title={item.label}
+                    >
+                      {collapsed ? item.short : item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+              <div className={collapsed ? "grid gap-1" : "grid gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2"}>
+                {collapsed ? null : <p className="px-2 pb-1 text-xs font-black uppercase text-slate-400">マルチプレイ</p>}
+                {MULTIPLAYER_ITEMS.map((item) => {
+                  const active = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`rounded-lg px-3 py-2 text-sm font-black transition ${
+                        active ? "bg-slate-950 text-white shadow-lg shadow-slate-300" : "text-slate-600 hover:bg-white hover:text-slate-950"
+                      } ${collapsed ? "text-center text-xs" : ""}`}
+                      title={item.label}
+                    >
+                      {collapsed ? item.short : item.label}
+                    </Link>
+                  );
+                })}
+              </div>
             </nav>
 
             <Link

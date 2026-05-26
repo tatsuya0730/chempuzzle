@@ -1,22 +1,27 @@
 export type TokenSymbol =
   | "H"
-  | "O"
+  | "He"
+  | "Li"
+  | "Be"
+  | "B"
   | "C"
   | "N"
-  | "P"
-  | "B"
+  | "O"
   | "F"
-  | "S"
-  | "Cl"
+  | "Ne"
   | "Na"
   | "Mg"
+  | "Al"
+  | "Si"
+  | "P"
+  | "S"
+  | "Cl"
+  | "Ar"
+  | "K"
   | "Ca"
   | "Fe"
   | "Cu"
   | "Zn"
-  | "He"
-  | "Ne"
-  | "Ar"
   | "Xe"
   | "Ph"
   | "Fire";
@@ -75,6 +80,7 @@ export type Molecule = {
   acidity: "acidic" | "neutral" | "basic";
   deferIfExpandableTo?: string;
   imageUrl?: string;
+  fact?: string;
 };
 
 export type ResolvedBond = {
@@ -102,6 +108,7 @@ export type ReactionLog = {
   count: number;
   points: number;
   imageUrl?: string;
+  fact?: string;
 };
 
 export type ComboNotice = {

@@ -2,8 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { AtomSelectionPanel } from "@/components/game/AtomSelectionPanel";
+import { MiniToken } from "@/components/game/MiniToken";
+import { useAtomSelection } from "@/components/game/useAtomSelection";
+import { MOLECULES } from "@/lib/game/molecules";
 
 const USERNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
+const MOCK_DISCOVERED = new Set(["H2", "O2", "H2O", "CO", "CO2", "NaCl"]);
 
 export default function MyPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -18,6 +23,7 @@ export default function MyPage() {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState(false);
+  const { enabledAtoms, setEnabledAtoms, resetEnabledAtoms } = useAtomSelection();
 
   const usernameValid = username.length === 0 || USERNAME_PATTERN.test(username);
 
@@ -179,6 +185,44 @@ export default function MyPage() {
             ))}
           </div>
         </article>
+      </section>
+
+      <AtomSelectionPanel enabledAtoms={enabledAtoms} onChange={setEnabledAtoms} onReset={resetEnabledAtoms} />
+
+      <section id="molecule-dex" className="rounded-lg border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/70">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase text-slate-500">Molecule Dex</p>
+            <h2 className="mt-1 text-lg font-black text-slate-950">分子図鑑</h2>
+          </div>
+          <span className="rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs font-black text-cyan-950">
+            {MOCK_DISCOVERED.size}/{MOLECULES.length} discovered
+          </span>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {MOLECULES.map((molecule) => {
+            const discovered = MOCK_DISCOVERED.has(molecule.formula);
+            return (
+              <article key={molecule.formula} className={`rounded-lg border p-3 ${discovered ? "border-slate-200 bg-slate-50" : "border-dashed border-slate-300 bg-slate-50/60 opacity-70"}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-base font-black text-slate-950">{discovered ? molecule.formula : "???"}</p>
+                    <p className="text-xs font-semibold text-slate-500">{discovered ? molecule.name : "未発見"}</p>
+                  </div>
+                  <span className={`rounded-md px-2 py-1 text-xs font-black ${discovered ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-500"}`}>{discovered ? "発見済" : "未発見"}</span>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-1">
+                  {molecule.nodes.slice(0, 5).map((token, index) => (
+                    <span key={`${molecule.formula}-${token}-${index}`} className={discovered ? "scale-75" : "scale-75 grayscale"}>
+                      <MiniToken token={token} />
+                    </span>
+                  ))}
+                </div>
+                <p className="mt-2 line-clamp-2 text-xs font-semibold leading-5 text-slate-500">{discovered ? molecule.fact ?? molecule.property : "分子探索モードで生成すると詳細が解放されます。"}</p>
+              </article>
+            );
+          })}
+        </div>
       </section>
 
       <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/70">

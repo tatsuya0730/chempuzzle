@@ -1,10 +1,10 @@
 # ChemPuzzle Game Specification
 
-Last reviewed: 2026-05-25
+Last reviewed: 2026-05-26
 
 ## Overview
 
-ChemPuzzle is a falling-token puzzle game where atom tokens settle into a hex-grid beaker. Molecules form when adjacent tokens match a registered molecular structure graph. Formed molecules clear from the board, grant score, and can trigger chain reactions through gravity compression.
+ChemPuzzle is a falling-token physics puzzle game where atom tokens fall into a gridless beaker powered by Phaser and Matter Physics. Atoms have different physical sizes by element, collide freely, and can merge into reactive molecule or fragment tokens. A formed molecule clears only after it reaches a non-expandable, generally stable composition; expandable intermediates such as `CO` remain as one token and can later react with another atom, for example `CO` + `O` -> `CO2`.
 
 ## Routes and Layout
 
@@ -22,37 +22,30 @@ The `(app)` route group is used because the grouped routes share an authenticate
 
 ## Board
 
-- Grid size: 13 rows x 9 columns.
-- Layout: staggered hex-style grid.
-- Board dimensions are derived from `ROWS`, `COLS`, `STEP_X`, `STEP_Y`, `ROW_OFFSET`, `CELL_W`, and `CELL_H`.
-- The current token falls from the center column.
-- A landing prediction marker is shown when the current token is inside the board.
-- After clears, the board compresses downward and diagonally toward the center.
+- Layout: gridless beaker with Matter Physics gravity, walls, collision, and rolling bodies.
+- The current atom spawns near the top center and can be nudged left or right while active.
+- Atom sizes are intentionally varied by element using a game-scaled approximation of real atomic/covalent radius differences.
+- Molecule and fragment tokens use larger compound bodies derived from their component atom sizes.
+- Game over occurs when settled bodies stack into the top spawn area.
 
 ## Tokens
 
 Available token symbols:
 
-- Nonmetals: `H`, `O`, `C`, `N`, `P`, `B`, `S`
-- Halogens: `F`, `Cl`
-- Metals: `Na`, `Mg`, `Ca`, `Fe`, `Cu`, `Zn`
-- Noble gases: `He`, `Ne`, `Ar`, `Xe`
-- Group token: `Ph`
-- Gimmick token: `Fire`
-
-`Ph` renders as a benzene ring icon. `Fire` renders as a flame icon and has no valence.
+- Default atoms: `H`, `He`, `Li`, `Be`, `B`, `C`, `N`, `O`, `F`, `Ne`, `Na`, `Mg`, `Al`, `Si`, `P`, `S`, `Cl`, `Ar`, `K`, `Ca`
+- The selectable atom set lives in My Page as a local periodic-table setting.
+- Legacy special tokens remain in old shared components, but they are not part of the default physics game pool.
 
 ## Controls
 
 - `ArrowLeft` / `A`: move left
 - `ArrowRight` / `D`: move right
-- `ArrowDown` / `S`: soft drop
-- `Space`: hard drop
-- `Enter`: start / stop / restart
+- `Space`: drop the aimed token
+- `Enter`: start when stopped, otherwise drop the aimed token
 - `C`: hold current token
 - `X`: swap current token with the next token
 
-Hold and next-swap can be used once per falling token.
+The active atom waits at the top of the beaker until the player drops it, Suika-game style. Hold and next-swap can be used once before dropping the active token.
 
 ## Queue and HUD
 
@@ -60,37 +53,28 @@ Hold and next-swap can be used once per falling token.
 - Hold displays the held token or empty state.
 - Next displays the upcoming queue with opacity and scale decreasing for later tokens.
 - pH is calculated from the average pH of recent reaction history and shown on a 0-14 bar.
-- Score, level, combo, attribute summary, and formed molecule history are shown in the right pane.
+- Score, level, combo, attribute summary, and molecule growth list are shown in the right pane.
+- Formed molecule history is shown below the board.
 
 ## Falling and Progression
 
 - Initial current token: `H`
 - Initial queue: `O`, `C`, `N`
-- New tokens are drawn by weighted random selection.
-- Higher levels increase the chance of advanced atoms such as metals, noble gases, `Ph`, and `Fire`.
-- Fall interval starts at `BASE_FALL_INTERVAL` and decreases with level, capped at 180 ms minimum.
-- Level increases by the number of matches resolved.
-- Game over occurs when a token settles above the visible board.
+- New tokens are drawn by weighted random selection from the selected atom pool.
+- The default selected atom pool is limited to atomic numbers 1-20.
+- Matter Physics controls falling, bounce, friction, and settling.
+- Level increases when terminal molecules clear.
+- Game over occurs when settled bodies block the top of the beaker.
 
 ## Molecule Formation
 
-Molecule detection uses registered molecule definitions from `lib/game/molecules.ts`.
+Molecule detection uses registered molecule definitions from `lib/game/molecules.ts` and the physics merge rules in `lib/game/physicsChemistry.ts`.
 
-A match is valid only when:
-
-- The board contains the required token symbols.
-- Each molecule bond connects two adjacent board positions.
-- The full molecule graph is satisfied, including hub structures.
-- The match passes a final structure validation step before scoring.
-
-This means structure matters:
-
-- `CO2` requires `O-C-O`, where carbon is adjacent to both oxygens.
-- `C-O-O` does not satisfy `CO2`.
-- `CH4` requires carbon with four adjacent hydrogens.
-- A straight `C-H-H-H-H` chain does not satisfy `CH4`.
-
-The old visual bond arms are not used for reaction decisions.
+- If two colliding bodies form a known molecule that can still expand into another registered molecule, they merge into one molecule token instead of clearing.
+- If two colliding bodies form a partial composition that is a subset of a registered molecule, they merge into a reactive fragment token.
+- If the composition matches a registered molecule and cannot expand further in the current rule set, it clears, scores, and is added to reaction history.
+- `CO` is treated as a playable intermediate token; `CO2` clears only when `CO` later combines with `O`.
+- Ionic molecule definitions have been removed for now.
 
 ## Scoring
 
@@ -98,45 +82,12 @@ Base molecule points come from each molecule definition, then receive:
 
 - node count bonus
 - difficulty bonus
-- multi-match combo bonus
-- water dissolve bonus
-- fire burst bonus
-- oxygen-boost bonus for fire
 
 Combo and chain notices show gained points, match count, chain depth, and bonus points.
 
-## Water Gimmick
+## Molecule Pool
 
-When `H2O` forms:
-
-- The water molecule clears.
-- Adjacent soluble tokens are also cleared.
-- Soluble tokens: `Na`, `Mg`, `Ca`, `Zn`, `F`, `Cl`
-- Each dissolved token adds bonus points.
-
-This is intentionally game-like rather than a full solubility simulation.
-
-## Fire Gimmick
-
-`Fire` is a falling token. When it is on the board:
-
-- If no fuel or oxygen is adjacent, it clears by itself.
-- Adjacent combustible tokens trigger a burst.
-- Combustibility levels:
-  - `H`: 1
-  - `C`: 2
-  - `S`: 2
-  - `P`: 2
-  - `Ph`: 3
-- Higher combustibility increases the burst range.
-- Adjacent `O` acts as an oxygen boost:
-  - oxygen increases fire power
-  - adjacent oxygen is consumed by the burst
-  - oxygen adds bonus points
-  - enough oxygen can expand the burst range
-- Strong bursts can also clear nearby non-noble-gas tokens.
-
-Noble gases `He`, `Ne`, and `Ar` resist strong fire burst spillover.
+The physics version intentionally keeps generated molecules limited to common/general-environment compounds such as `H2`, `O2`, `N2`, `H2O`, `CO`, `CO2`, `CH4`, `NH3`, `NaCl`, `KCl`, `MgO`, `CaO`, `SiO2`, and `Al2O3`. Exotic noble-gas compounds, benzene group reactions, transition-metal salts, and ion-only reactions are excluded from the default rule set.
 
 ## Reaction History and Attributes
 

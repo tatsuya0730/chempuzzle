@@ -60,6 +60,15 @@ body {
   pointer-events: none;
 }
 
+.physics-beaker {
+  min-height: 690px;
+}
+
+.physics-beaker canvas {
+  display: block;
+  max-width: 100%;
+}
+
 .hex-row + .hex-row {
   margin-top: -3px;
 }
